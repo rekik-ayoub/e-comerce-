@@ -672,7 +672,8 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
           <div class="flex justify-between items-center pb-4 border-b border-beige-mid">
             <div>
               <h4 class="font-serif font-bold text-burgundy text-lg">
-                {{ editingEvent() ? 'Modifier l\'Événement : ' + editingEvent()?.title_fr : 'Nouvel Événement Le Bayou' }}
+                <span *ngIf="editingEvent()">Modifier l'événement : {{ editingEvent()?.title_fr }}</span>
+                <span *ngIf="!editingEvent()">Nouvel Événement Le Bayou</span>
               </h4>
               <p class="text-xs text-muted-custom">Précisez la date, l'heure et l'affiche promotionnelle.</p>
             </div>
@@ -729,7 +730,9 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
 
           <div class="flex gap-3 pt-4 border-t border-beige-mid">
             <button (click)="saveEvent()" class="btn-bayou-burgundy text-xs py-2.5 px-8 shadow-sm">
-              <i class="bi bi-save"></i> {{ editingEvent() ? 'Enregistrer les modifications' : 'Publier l\'événement' }}
+              <i class="bi bi-save"></i>
+              <span *ngIf="editingEvent()"> Enregistrer les modifications</span>
+              <span *ngIf="!editingEvent()"> Publier l'événement</span>
             </button>
             <button (click)="cancelEditEvent()" class="btn-bayou-outline text-xs py-2.5 px-6">
               Annuler
