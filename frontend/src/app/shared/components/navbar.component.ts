@@ -10,40 +10,40 @@ import { ApiService } from '../../core/services/api.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <header class="bayou-header sticky top-0 z-50">
+    <header class="bayou-header sticky top-0 z-50 shadow-sm">
       <!-- Top banner for loyalty teaser -->
-      <div class="loyalty-strip py-1 px-4 text-center text-xs font-semibold flex items-center justify-center gap-2">
+      <div class="loyalty-strip py-1.5 px-4 text-center text-xs font-semibold flex items-center justify-center gap-2">
         <i class="bi bi-gift-fill text-gold"></i>
-        <span>{{ t('loyalty.badge') }} : 10 pts / commande — Atteignez 50 pts pour un café offert !</span>
+        <span>{{ t('loyalty.badge') }} : <strong>+10 pts / commande</strong> — Atteignez 50 pts pour un café offert !</span>
       </div>
 
-      <nav class="navbar-main flex items-center justify-between px-6 py-3">
+      <nav class="container mx-auto flex items-center justify-between px-6 py-3.5">
         <!-- Logo Brand -->
-        <a routerLink="/" class="brand-link flex items-center gap-3">
-          <img src="/logo.jpg" alt="Le Bayou Logo" class="brand-logo" />
+        <a routerLink="/" class="flex items-center gap-3 no-underline">
+          <img src="/logo.jpg" alt="Le Bayou Logo" class="h-12 w-auto object-contain rounded-lg shadow-sm" />
         </a>
 
         <!-- Main Navigation Links -->
-        <div class="nav-links hidden md:flex items-center gap-6">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">{{ t('nav.home') }}</a>
-          <a routerLink="/catalog" routerLinkActive="active">{{ t('nav.menu') }}</a>
-          <a routerLink="/reservations" routerLinkActive="active">{{ t('nav.reservations') }}</a>
-          <a routerLink="/birthday-menu" routerLinkActive="active">{{ t('nav.birthday') }}</a>
-          <a routerLink="/events" routerLinkActive="active">{{ t('nav.events') }}</a>
-          <a routerLink="/reviews" routerLinkActive="active">{{ t('nav.reviews') }}</a>
-          <a routerLink="/contact" routerLinkActive="active">{{ t('nav.contact') }}</a>
+        <div class="hidden lg:flex items-center gap-7">
+          <a routerLink="/" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" [routerLinkActiveOptions]="{exact: true}" class="nav-item">{{ t('nav.home') }}</a>
+          <a routerLink="/catalog" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.menu') }}</a>
+          <a routerLink="/reservations" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.reservations') }}</a>
+          <a routerLink="/birthday-menu" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.birthday') }}</a>
+          <a routerLink="/events" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.events') }}</a>
+          <a routerLink="/reviews" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.reviews') }}</a>
+          <a routerLink="/contact" routerLinkActive="text-bayou-burgundy font-bold border-b-2 border-bayou-gold" class="nav-item">{{ t('nav.contact') }}</a>
         </div>
 
         <!-- Actions & Profile -->
-        <div class="nav-actions flex items-center gap-4">
+        <div class="flex items-center gap-3">
           <!-- Language Switcher -->
           <button (click)="ts.toggleLanguage()" class="lang-btn" title="Changer de langue">
             <span class="font-bold">{{ ts.currentLang() === 'fr' ? 'EN 🇬🇧' : 'FR 🇫🇷' }}</span>
           </button>
 
           <!-- Cart Icon with badge -->
-          <a routerLink="/cart" class="cart-btn relative">
-            <i class="bi bi-bag-fill text-xl"></i>
+          <a routerLink="/cart" class="cart-btn relative p-2 text-bayou-burgundy hover:text-bayou-gold transition-colors">
+            <i class="bi bi-bag-fill text-2xl"></i>
             <span *ngIf="api.cartCount() > 0" class="cart-badge animate-bounce">
               {{ api.cartCount() }}
             </span>
@@ -51,10 +51,10 @@ import { ApiService } from '../../core/services/api.service';
 
           <!-- User Menu -->
           <ng-container *ngIf="auth.currentUser() as user; else guestTpl">
-            <div class="user-chip flex items-center gap-2">
-              <a routerLink="/profile" class="user-name flex items-center gap-1.5" title="Mon Profil">
-                <i class="bi bi-person-circle text-gold text-lg"></i>
-                <span class="font-semibold text-sm">{{ user.name }}</span>
+            <div class="user-chip flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+              <a routerLink="/profile" class="flex items-center gap-2 no-underline text-bayou-burgundy" title="Mon Profil">
+                <i class="bi bi-person-circle text-bayou-gold text-lg"></i>
+                <span class="font-bold text-xs">{{ user.name }}</span>
                 <span class="points-pill">{{ user.points }} pts</span>
               </a>
 
@@ -62,16 +62,16 @@ import { ApiService } from '../../core/services/api.service';
                 <i class="bi bi-shield-lock-fill"></i> Admin
               </a>
 
-              <button (click)="logout()" class="logout-btn" title="Déconnexion">
+              <button (click)="logout()" class="logout-btn ml-1" title="Déconnexion">
                 <i class="bi bi-box-arrow-right"></i>
               </button>
             </div>
           </ng-container>
 
           <ng-template #guestTpl>
-            <div class="auth-btns flex items-center gap-2">
-              <a routerLink="/auth/login" class="btn-login text-sm font-semibold">{{ t('nav.login') }}</a>
-              <a routerLink="/auth/register" class="btn-bayou-gold text-xs py-2 px-4">{{ t('nav.register') }}</a>
+            <div class="flex items-center gap-2">
+              <a routerLink="/auth/login" class="btn-login text-xs font-bold px-3 py-2 rounded-full text-bayou-burgundy hover:bg-amber-50 no-underline">{{ t('nav.login') }}</a>
+              <a routerLink="/auth/register" class="btn-bayou-gold text-xs py-2 px-4 shadow-sm no-underline">{{ t('nav.register') }}</a>
             </div>
           </ng-template>
         </div>
