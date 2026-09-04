@@ -7,7 +7,9 @@ import { User } from '../models';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = typeof window !== 'undefined' && window.location.port === '4200' 
+    ? 'http://localhost:8000/api' 
+    : '/api';
   currentUser = signal<User | null>(null);
   token = signal<string | null>(null);
 
