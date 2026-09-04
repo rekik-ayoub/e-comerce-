@@ -34,9 +34,14 @@ import { CommonModule } from '@angular/common';
           <p class="text-xs text-muted-custom mt-1">À présenter lors de la livraison ou en caisse</p>
         </div>
 
-        <button (click)="close.emit()" class="btn-bayou-gold w-full py-3">
-          <i class="bi bi-heart-fill"></i> Déguster mon cadeau
-        </button>
+        <div class="space-y-2">
+          <button (click)="claimReward.emit()" class="btn-bayou-gold w-full py-3 text-sm font-bold shadow-md">
+            <i class="bi bi-gift-fill"></i> Ajouter mon Café Gratuit & Commander
+          </button>
+          <button (click)="close.emit()" class="btn-bayou-outline w-full py-2 text-xs">
+            Fermer
+          </button>
+        </div>
       </div>
     </div>
   `,
@@ -99,4 +104,5 @@ export class CelebrationModalComponent {
   @Input() show: boolean = false;
   @Input() message: string = '';
   @Output() close = new EventEmitter<void>();
+  @Output() claimReward = new EventEmitter<void>();
 }

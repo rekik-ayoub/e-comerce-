@@ -41,6 +41,8 @@ class OrderController extends Controller
             'delivery_lat' => 'nullable|numeric',
             'delivery_lng' => 'nullable|numeric',
             'notes' => 'nullable|string',
+            'use_free_coffee' => 'nullable|boolean',
+            'voucher_code' => 'nullable|string',
         ]);
 
         $user = $request->user();
@@ -50,20 +52,64 @@ class OrderController extends Controller
             $pointsPerOrder = $loyaltySetting ? $loyaltySetting->points_per_order : 10;
             $targetScore = $loyaltySetting ? $loyaltySetting->target_score : 50;
 
+            $isFreeCoffeeRequested = !empty($validated['use_free_coffee']) 
+                || (isset($validated['voucher_code']) && strtoupper(trim($validated['voucher_code'])) === 'FREE-COFFEE-BAYOU');
+
             $total = 0;
             $itemsData = [];
+            $freeCoffeeApplied = false;
 
             foreach ($validated['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
-                $subtotal = $product->price * $item['quantity'];
+                $unitPrice = $product->price;
+
+                // If free coffee requested, discount 1 coffee to 0 DT
+                if ($isFreeCoffeeRequested && !$freeCoffeeApplied && ($product->id == 1 || $product->id == 2 || $product->category_id == 1)) {
+                    $qty = $item['quantity'];
+                    if ($qty == 1) {
+                        $unitPrice = 0;
+                        $freeCoffeeApplied = true;
+                    } else {
+                        $itemsData[] = [
+                            'product_id' => $product->id,
+                            'quantity' => 1,
+                            'unit_price' => 0,
+                        ];
+                        $itemsData[] = [
+                            'product_id' => $product->id,
+                            'quantity' => $qty - 1,
+                            'unit_price' => $product->price,
+                        ];
+                        $total += $product->price * ($qty - 1);
+                        $freeCoffeeApplied = true;
+                        continue;
+                    }
+                }
+
+                $subtotal = $unitPrice * $item['quantity'];
                 $total += $subtotal;
 
                 $itemsData[] = [
                     'product_id' => $product->id,
                     'quantity' => $item['quantity'],
-                    'unit_price' => $product->price,
+                    'unit_price' => $unitPrice,
                 ];
             }
+
+            // If user requested free coffee but didn't have coffee in cart, automatically add the signature free coffee at 0 DT!
+            if ($isFreeCoffeeRequested && !$freeCoffeeApplied) {
+                $freeProduct = Product::find(1) ?? Product::first();
+                if ($freeProduct) {
+                    $itemsData[] = [
+                        'product_id' => $freeProduct->id,
+                        'quantity' => 1,
+                        'unit_price' => 0,
+                    ];
+                    $freeCoffeeApplied = true;
+                }
+            }
+
+            $orderNotes = trim(($validated['notes'] ?? '') . ($freeCoffeeApplied ? ' [🎁 Café Gratuit Fidélité Inclus - Code FREE-COFFEE-BAYOU]' : ''));
 
             $order = Order::create([
                 'user_id' => $user->id,
@@ -72,7 +118,7 @@ class OrderController extends Controller
                 'delivery_address' => $validated['delivery_address'] ?? null,
                 'delivery_lat' => $validated['delivery_lat'] ?? null,
                 'delivery_lng' => $validated['delivery_lng'] ?? null,
-                'notes' => $validated['notes'] ?? null,
+                'notes' => $orderNotes ?: null,
                 'points_earned' => $pointsPerOrder,
             ]);
 
@@ -81,19 +127,28 @@ class OrderController extends Controller
             }
 
             // Update user points
-            $oldPoints = $user->points;
-            $newPoints = $oldPoints + $pointsPerOrder;
-            $reachedTarget = ($oldPoints < $targetScore) && ($newPoints >= $targetScore);
-
-            $user->update(['points' => $newPoints]);
+            if ($freeCoffeeApplied) {
+                // Free coffee used -> Reset counter to 0, then add points from this new order (+10)
+                $newPoints = $pointsPerOrder;
+                $user->update(['points' => $newPoints]);
+                $reachedTarget = false;
+            } else {
+                $oldPoints = $user->points;
+                $newPoints = $oldPoints + $pointsPerOrder;
+                $reachedTarget = ($oldPoints < $targetScore) && ($newPoints >= $targetScore);
+                $user->update(['points' => $newPoints]);
+            }
 
             return response()->json([
-                'message' => 'Commande passée avec succès (Paiement à la livraison)',
+                'message' => $freeCoffeeApplied 
+                    ? 'Commande validée avec votre Café Offert ! Votre compteur a été remis à 0.' 
+                    : 'Commande passée avec succès (Paiement à la livraison)',
                 'order' => $order->load('items.product'),
                 'points_earned' => $pointsPerOrder,
                 'current_points' => $newPoints,
                 'target_score' => $targetScore,
                 'reached_target' => $reachedTarget,
+                'free_coffee_applied' => $freeCoffeeApplied,
                 'reward_info' => $reachedTarget ? [
                     'fr' => $loyaltySetting->reward_description_fr ?? 'Un café offert !',
                     'en' => $loyaltySetting->reward_description_en ?? 'A free coffee!',

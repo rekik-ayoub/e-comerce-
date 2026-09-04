@@ -13,9 +13,9 @@ class ContentController extends Controller
 {
     public function events()
     {
+        // Return all active events created by admin ordered by date
         $events = Event::where('active', true)
-            ->where('event_date', '>=', now())
-            ->orderBy('event_date')
+            ->orderBy('event_date', 'asc')
             ->get();
 
         return response()->json($events);
@@ -51,12 +51,12 @@ class ContentController extends Controller
             'product_id' => $validated['product_id'] ?? null,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
-            'approved' => false, // Requires admin approval
+            'approved' => true, // Visible immediately
         ]);
 
         return response()->json([
-            'message' => 'Merci pour votre avis ! Il sera visible dès validation par notre équipe.',
-            'review' => $review,
+            'message' => 'Merci pour votre avis ! Votre message a été publié avec succès.',
+            'review' => $review->load(['user:id,name', 'product:id,name_fr,name_en']),
         ], 201);
     }
 

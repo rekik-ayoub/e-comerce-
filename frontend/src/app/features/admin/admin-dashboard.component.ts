@@ -1,8 +1,10 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, EventItem, Review } from '../../core/models';
 
 @Component({
@@ -10,55 +12,116 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="container-bayou py-10">
-      <!-- Admin Header -->
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-beige-mid mb-8 gap-4">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-gold">Espace d'Administration</span>
-          <h1 class="font-serif font-bold text-3xl text-burgundy">Panneau de Contrôle Le Bayou</h1>
-          <p class="text-xs text-muted-custom mt-1">Gestion complète : Réservations, Formules Anniversaires, Produits, Événements & Fidélité</p>
+    <div class="admin-shell">
+      <!-- SIDEBAR -->
+      <aside class="admin-sidebar">
+        <!-- Brand Header -->
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-icon"><i class="bi bi-shield-lock-fill"></i></div>
+          <div>
+            <div class="sidebar-brand-title">Le Bayou</div>
+            <div class="sidebar-brand-sub">Administration</div>
+          </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <span class="text-xs bg-bayou-burgundy text-white px-3.5 py-1.5 rounded-full font-semibold flex items-center gap-1.5 shadow-sm">
-            <i class="bi bi-shield-check text-gold"></i> Connecté en Administrateur
-          </span>
-        </div>
-      </div>
+        <!-- Nav Items -->
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-label">GESTION</div>
 
-      <!-- Navigation Tabs -->
-      <div class="flex flex-wrap gap-2 mb-8 bg-bayou-cream-soft p-2 rounded-2xl border border-beige-mid shadow-sm">
-        <button (click)="tab.set('stats')" [class.active]="tab() === 'stats'" class="admin-tab">
-          <i class="bi bi-speedometer2"></i> Tableau de bord
-        </button>
-        <button (click)="tab.set('reservations')" [class.active]="tab() === 'reservations'" class="admin-tab">
-          <i class="bi bi-calendar2-heart"></i> Réservations
-          <span *ngIf="pendingReservationsCount() > 0" class="badge-count bg-amber-500 text-white">
-            {{ pendingReservationsCount() }}
-          </span>
-        </button>
-        <button (click)="tab.set('birthday_menus')" [class.active]="tab() === 'birthday_menus'" class="admin-tab">
-          <i class="bi bi-cake2-fill text-gold"></i> Formules Anniversaire
-        </button>
-        <button (click)="tab.set('products')" [class.active]="tab() === 'products'" class="admin-tab">
-          <i class="bi bi-cup-hot"></i> Produits & Carte
-        </button>
-        <button (click)="tab.set('events')" [class.active]="tab() === 'events'" class="admin-tab">
-          <i class="bi bi-calendar-event"></i> Événements
-        </button>
-        <button (click)="tab.set('orders')" [class.active]="tab() === 'orders'" class="admin-tab">
-          <i class="bi bi-bag-check"></i> Commandes & Livraisons
-        </button>
-        <button (click)="tab.set('birthday_slots')" [class.active]="tab() === 'birthday_slots'" class="admin-tab">
-          <i class="bi bi-calendar-check"></i> Créneaux Anniversaire
-        </button>
-        <button (click)="tab.set('reviews')" [class.active]="tab() === 'reviews'" class="admin-tab">
-          <i class="bi bi-star"></i> Avis Clients
-        </button>
-        <button (click)="tab.set('loyalty')" [class.active]="tab() === 'loyalty'" class="admin-tab">
-          <i class="bi bi-gift"></i> Programme Fidélité
-        </button>
-      </div>
+          <button (click)="tab.set('stats')" [class.active]="tab() === 'stats'" class="sidebar-item">
+            <i class="bi bi-speedometer2"></i>
+            <span>Tableau de bord</span>
+          </button>
+
+          <button (click)="tab.set('reservations')" [class.active]="tab() === 'reservations'" class="sidebar-item">
+            <i class="bi bi-calendar2-heart"></i>
+            <span>Réservations</span>
+            <span *ngIf="pendingReservationsCount() > 0" class="sidebar-badge">{{ pendingReservationsCount() }}</span>
+          </button>
+
+          <button (click)="tab.set('orders')" [class.active]="tab() === 'orders'" class="sidebar-item">
+            <i class="bi bi-bag-check"></i>
+            <span>Commandes</span>
+          </button>
+
+          <div class="sidebar-section-label">MENU & CONTENU</div>
+
+          <button (click)="tab.set('products')" [class.active]="tab() === 'products'" class="sidebar-item">
+            <i class="bi bi-cup-hot"></i>
+            <span>Produits & Carte</span>
+          </button>
+
+          <button (click)="tab.set('events')" [class.active]="tab() === 'events'" class="sidebar-item">
+            <i class="bi bi-calendar-event"></i>
+            <span>Événements</span>
+          </button>
+
+          <div class="sidebar-section-label">ANNIVERSAIRES</div>
+
+          <button (click)="tab.set('birthday_menus')" [class.active]="tab() === 'birthday_menus'" class="sidebar-item">
+            <i class="bi bi-cake2-fill"></i>
+            <span>Formules Anniversaire</span>
+          </button>
+
+          <button (click)="tab.set('birthday_slots')" [class.active]="tab() === 'birthday_slots'" class="sidebar-item">
+            <i class="bi bi-calendar-check"></i>
+            <span>Créneaux Disponibles</span>
+          </button>
+
+          <div class="sidebar-section-label">PARAMÈTRES</div>
+
+          <button (click)="tab.set('reviews')" [class.active]="tab() === 'reviews'" class="sidebar-item">
+            <i class="bi bi-star"></i>
+            <span>Avis Clients</span>
+          </button>
+
+          <button (click)="tab.set('loyalty')" [class.active]="tab() === 'loyalty'" class="sidebar-item">
+            <i class="bi bi-gift"></i>
+            <span>Programme Fidélité</span>
+          </button>
+        </nav>
+
+        <!-- Footer -->
+        <div class="sidebar-footer flex items-center justify-between">
+          <div class="sidebar-admin-chip">
+            <i class="bi bi-shield-check"></i>
+            <span>{{ auth.currentUser()?.name || 'Administrateur' }}</span>
+          </div>
+          <button (click)="logout()" class="p-2 text-rose-300 hover:text-white hover:bg-white/10 rounded-lg text-sm transition-colors cursor-pointer" title="Déconnexion">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="admin-content">
+        <!-- Page title bar -->
+        <div class="admin-topbar">
+          <div>
+            <h1 class="admin-topbar-title">
+              <ng-container *ngIf="tab() === 'stats'">Tableau de bord</ng-container>
+              <ng-container *ngIf="tab() === 'reservations'">Réservations</ng-container>
+              <ng-container *ngIf="tab() === 'orders'">Commandes & Livraisons</ng-container>
+              <ng-container *ngIf="tab() === 'products'">Produits & Carte</ng-container>
+              <ng-container *ngIf="tab() === 'events'">Événements</ng-container>
+              <ng-container *ngIf="tab() === 'birthday_menus'">Formules Anniversaire</ng-container>
+              <ng-container *ngIf="tab() === 'birthday_slots'">Créneaux Anniversaire</ng-container>
+              <ng-container *ngIf="tab() === 'reviews'">Avis Clients</ng-container>
+              <ng-container *ngIf="tab() === 'loyalty'">Programme Fidélité</ng-container>
+            </h1>
+            <p class="admin-topbar-sub">Panneau de contrôle · Le Bayou Coffee Lounge</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-muted-custom hidden sm:inline">Connecté : <strong>{{ auth.currentUser()?.email || 'admin@lebayou.com' }}</strong></span>
+            <button (click)="logout()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-colors cursor-pointer" title="Déconnexion">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Déconnexion</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-content-inner">
 
       <!-- 1. STATS OVERVIEW -->
       <div *ngIf="tab() === 'stats'" class="space-y-8">
@@ -150,12 +213,15 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
                   </div>
                 </div>
 
-                <div *ngIf="res.status === 'pending'" class="flex gap-1.5 flex-shrink-0">
-                  <button (click)="updateReservationStatus(res.id, 'confirmed')" class="btn-action bg-green-600 text-white" title="Accepter">
+                <div class="flex gap-1.5 flex-shrink-0 items-center">
+                  <button *ngIf="res.status === 'pending'" (click)="updateReservationStatus(res.id, 'confirmed')" class="btn-action bg-green-600 text-white" title="Accepter">
                     <i class="bi bi-check-lg"></i>
                   </button>
-                  <button (click)="updateReservationStatus(res.id, 'rejected')" class="btn-action bg-red-600 text-white" title="Refuser">
+                  <button *ngIf="res.status === 'pending'" (click)="updateReservationStatus(res.id, 'rejected')" class="btn-action bg-red-600 text-white" title="Refuser">
                     <i class="bi bi-x-lg"></i>
+                  </button>
+                  <button (click)="deleteReservation(res.id)" class="btn-action bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white" title="Supprimer la réservation">
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
@@ -345,6 +411,13 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
                       title="Refuser cette réservation"
                     >
                       <i class="bi bi-x-lg"></i> Refuser
+                    </button>
+                    <button
+                      (click)="deleteReservation(res.id)"
+                      class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 font-bold text-xs flex items-center gap-1 shadow-sm transition-all"
+                      title="Supprimer définitivement la réservation"
+                    >
+                      <i class="bi bi-trash"></i> Supprimer
                     </button>
                   </div>
                 </td>
@@ -704,7 +777,7 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
                 <th class="p-3.5">Client & Contact</th>
                 <th class="p-3.5">Articles</th>
                 <th class="p-3.5">Total (DT)</th>
-                <th class="p-3.5">Adresse de Livraison</th>
+                <th class="p-3.5">Adresse & GPS</th>
                 <th class="p-3.5">Statut Actuel</th>
                 <th class="p-3.5 text-center">Actions</th>
               </tr>
@@ -725,10 +798,28 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
                   {{ ord.total | number:'1.2-2' }} DT
                 </td>
                 <td class="p-3.5 max-w-xs">
-                  <div>{{ ord.delivery_address || 'Sur place' }}</div>
-                  <div *ngIf="ord.delivery_lat" class="font-mono text-[10px] text-gold mt-0.5">
-                    Lat: {{ ord.delivery_lat }}, Lng: {{ ord.delivery_lng }}
-                  </div>
+                  <div class="font-medium">{{ ord.delivery_address || 'Sur place' }}</div>
+                  <!-- GPS Block -->
+                  <ng-container *ngIf="ord.delivery_lat && ord.delivery_lng">
+                    <div class="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                      <!-- Open in Google Maps -->
+                      <a [href]="'https://www.google.com/maps?q=' + ord.delivery_lat + ',' + ord.delivery_lng"
+                         target="_blank"
+                         class="inline-flex items-center gap-1 text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-blue-700 no-underline transition-colors">
+                        <i class="bi bi-geo-alt-fill"></i> Voir sur Maps
+                      </a>
+                      <!-- Copy GPS link for delivery person -->
+                      <button (click)="copyGps(ord.delivery_lat, ord.delivery_lng)"
+                              class="inline-flex items-center gap-1 text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold hover:bg-amber-600 transition-colors"
+                              title="Copier le lien GPS pour le livreur">
+                        <i class="bi bi-clipboard-fill"></i> Copier lien
+                      </button>
+                    </div>
+                    <div class="font-mono text-[9px] text-muted-custom mt-1">
+                      {{ ord.delivery_lat | number:'1.5-5' }}, {{ ord.delivery_lng | number:'1.5-5' }}
+                    </div>
+                  </ng-container>
+                  <div *ngIf="!ord.delivery_lat" class="text-[10px] text-muted-custom mt-0.5 italic">Pas de GPS</div>
                 </td>
                 <td class="p-3.5">
                   <span class="px-2.5 py-1 rounded-full font-bold uppercase text-[10px]" [ngClass]="{
@@ -740,16 +831,19 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
                     {{ ord.status }}
                   </span>
                 </td>
-                <td class="p-3.5 text-center">
-                  <div class="flex gap-1.5 justify-center">
-                    <button *ngIf="ord.status === 'pending'" (click)="updateOrderStatus(ord.id, 'accepted')" class="btn-action bg-blue-600 text-white" title="Accepter la livraison">
+                <td class="p-3.5 text-center whitespace-nowrap">
+                  <div class="flex gap-1.5 justify-center items-center">
+                    <button *ngIf="ord.status !== 'accepted' && ord.status !== 'delivered'" (click)="updateOrderStatus(ord.id, 'accepted')" class="btn-action bg-green-600 hover:bg-green-700 text-white" title="Accepter la commande">
                       <i class="bi bi-check-lg"></i>
                     </button>
-                    <button *ngIf="ord.status === 'accepted'" (click)="updateOrderStatus(ord.id, 'delivered')" class="btn-action bg-green-600 text-white" title="Marquer comme Livré">
+                    <button *ngIf="ord.status !== 'rejected'" (click)="updateOrderStatus(ord.id, 'rejected')" class="btn-action bg-red-600 hover:bg-red-700 text-white" title="Refuser la commande">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                    <button *ngIf="ord.status === 'accepted' || ord.status === 'preparing'" (click)="updateOrderStatus(ord.id, 'delivered')" class="btn-action bg-blue-600 hover:bg-blue-700 text-white" title="Marquer comme Livré">
                       <i class="bi bi-truck"></i>
                     </button>
-                    <button *ngIf="ord.status === 'pending'" (click)="updateOrderStatus(ord.id, 'rejected')" class="btn-action bg-red-600 text-white" title="Refuser">
-                      <i class="bi bi-x-lg"></i>
+                    <button (click)="deleteOrder(ord.id)" class="btn-action bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200" title="Supprimer la commande">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </td>
@@ -867,35 +961,203 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
           </button>
         </div>
       </div>
-    </div>
+        </div><!-- /admin-content-inner -->
+      </main><!-- /admin-content -->
+    </div><!-- /admin-shell -->
   `,
   styles: [`
-    .admin-tab {
-      padding: 9px 15px;
-      border-radius: var(--radius-sm);
-      border: none;
-      background: transparent;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--bayou-text-main);
-      cursor: pointer;
-      display: inline-flex;
+    /* ===== ADMIN SHELL LAYOUT ===== */
+    :host {
+      display: block;
+      min-height: 100vh;
+    }
+
+    .admin-shell {
+      display: flex;
+      min-height: calc(100vh - 80px);
+      background: #F8F5F0;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .admin-sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--bayou-burgundy);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      box-shadow: 4px 0 20px rgba(63,13,12,0.15);
+      z-index: 10;
+    }
+
+    .sidebar-brand {
+      display: flex;
       align-items: center;
-      gap: 7px;
-      transition: all 0.2s;
+      gap: 12px;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .sidebar-brand-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--bayou-gold);
+    }
+
+    .sidebar-brand-title {
+      font-weight: 800;
+      font-size: 1rem;
+      font-family: var(--font-serif);
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-brand-sub {
+      font-size: 0.68rem;
+      opacity: 0.65;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 1px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      opacity: 0.5;
+      padding: 14px 10px 6px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.18s ease;
+      position: relative;
+
+      i {
+        width: 20px;
+        text-align: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      span:first-of-type {
+        flex: 1;
+      }
 
       &:hover {
-        background: var(--bayou-gold-light);
-        color: var(--bayou-burgundy);
+        background: rgba(255,255,255,0.1);
+        color: #fff;
       }
 
       &.active {
-        background: var(--bayou-burgundy);
-        color: #fff;
-        box-shadow: 0 4px 10px rgba(63, 13, 12, 0.2);
+        background: var(--bayou-gold);
+        color: #3F0D0C;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(196,158,85,0.35);
+
+        i { color: #3F0D0C; }
       }
     }
 
+    .sidebar-badge {
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 1px 7px;
+      border-radius: 9999px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-admin-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0.85;
+
+      i { color: var(--bayou-gold); }
+    }
+
+    /* ===== MAIN CONTENT AREA ===== */
+    .admin-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .admin-topbar {
+      background: #fff;
+      border-bottom: 1px solid rgba(217,196,169,0.4);
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(63,13,12,0.04);
+    }
+
+    .admin-topbar-title {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--bayou-burgundy);
+      margin: 0;
+    }
+
+    .admin-topbar-sub {
+      font-size: 0.75rem;
+      color: var(--bayou-muted);
+      margin: 2px 0 0;
+    }
+
+    .admin-content-inner {
+      padding: 28px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* ===== LEGACY STYLES ===== */
     .badge-count {
       padding: 1px 7px;
       border-radius: 9999px;
@@ -924,6 +1186,14 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
 export class AdminDashboardComponent implements OnInit {
   ts = inject(TranslationService);
   api = inject(ApiService);
+  auth = inject(AuthService);
+  router = inject(Router);
+
+  logout() {
+    this.auth.clearSession();
+    this.auth.logout().subscribe();
+    this.router.navigate(['/auth/login']);
+  }
 
   tab = signal<string>('stats');
   stats = signal<any>(null);
@@ -1273,19 +1543,67 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  deleteOrder(id: number) {
+    if (confirm('Voulez-vous vraiment supprimer cette commande ?')) {
+      this.api.deleteAdminOrder(id).subscribe({
+        next: () => {
+          this.loadOrders();
+          this.loadStats();
+        },
+        error: () => alert('Erreur lors de la suppression de la commande.')
+      });
+    }
+  }
+
   updateReservationStatus(id: number, status: string) {
     this.api.updateReservationStatus(id, status).subscribe(() => {
       this.loadReservations();
       this.loadStats();
+      this.loadBirthdaySlots();
     });
   }
 
+  deleteReservation(id: number) {
+    if (confirm('Voulez-vous vraiment supprimer cette réservation ?')) {
+      this.api.deleteAdminReservation(id).subscribe({
+        next: () => {
+          this.loadReservations();
+          this.loadStats();
+          this.loadBirthdaySlots();
+        },
+        error: () => alert('Erreur lors de la suppression de la réservation.')
+      });
+    }
+  }
+
   addBirthdaySlot() {
-    this.loadBirthdaySlots();
+    if (!this.newSlotDate || !this.newSlotTime) {
+      alert('Veuillez saisir une date et une heure.');
+      return;
+    }
+    const payload = {
+      date: this.newSlotDate,
+      time: this.newSlotTime,
+      max_capacity: 2,
+      is_available: true
+    };
+    this.api.createAdminBirthdaySlot(payload).subscribe({
+      next: () => {
+        alert('Créneau d\'anniversaire ajouté avec succès (capacité max : 2) !');
+        this.loadBirthdaySlots();
+      },
+      error: (err) => {
+        console.error('Error creating slot:', err);
+        const msg = err?.error?.message || (err?.error?.errors ? Object.values(err.error.errors).flat().join(', ') : 'Erreur lors de la création du créneau.');
+        alert(msg);
+      }
+    });
   }
 
   deleteBirthdaySlot(id: number) {
-    this.loadBirthdaySlots();
+    if (confirm('Supprimer ce créneau ?')) {
+      this.api.deleteAdminBirthdaySlot(id).subscribe(() => this.loadBirthdaySlots());
+    }
   }
 
   toggleReview(id: number) {
@@ -1311,4 +1629,16 @@ export class AdminDashboardComponent implements OnInit {
       error: () => alert('Erreur lors de la sauvegarde.')
     });
   }
+
+  /** Copy a shareable Google Maps link to clipboard for the delivery person */
+  copyGps(lat: number, lng: number) {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('📍 Lien GPS copié !\nEnvoyez ce lien au livreur :\n' + url);
+    }).catch(() => {
+      // Fallback: prompt the URL
+      prompt('Copiez ce lien GPS pour le livreur :', url);
+    });
+  }
 }
+

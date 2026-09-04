@@ -79,10 +79,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Orders Management
         Route::get('/orders', [AdminController::class, 'orders']);
         Route::patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus']);
+        Route::delete('/orders/{id}', [AdminController::class, 'deleteOrder']);
 
         // Reservations Management
         Route::get('/reservations', [AdminController::class, 'reservations']);
         Route::patch('/reservations/{id}/status', [AdminController::class, 'updateReservationStatus']);
+        Route::delete('/reservations/{id}', [AdminController::class, 'deleteReservation']);
 
         // Birthday Slots CRUD
         Route::get('/birthday-slots', [AdminController::class, 'birthdaySlots']);

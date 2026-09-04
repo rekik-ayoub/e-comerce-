@@ -1,14 +1,16 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Category, Product } from '../../core/models';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <div class="container-bayou py-12">
       <!-- Header -->
@@ -89,6 +91,8 @@ import { Category, Product } from '../../core/models';
               <button (click)="addToCart(product)" class="btn-bayou-gold text-xs py-2 px-4">
                 <i class="bi bi-bag-plus"></i> {{ ts.translate('catalog.add_to_cart') }}
               </button>
+              <!-- Login prompt for guests -->
+              <span *ngIf="!auth.isLoggedIn()" class="text-[10px] text-muted-custom mt-1 block text-center">Connexion requise</span>
             </div>
           </div>
         </div>
@@ -123,6 +127,8 @@ import { Category, Product } from '../../core/models';
 export class CatalogComponent implements OnInit {
   ts = inject(TranslationService);
   api = inject(ApiService);
+  auth = inject(AuthService);
+  router = inject(Router);
 
   categories = signal<Category[]>([]);
   allProducts = signal<Product[]>([]);
@@ -173,6 +179,10 @@ export class CatalogComponent implements OnInit {
   }
 
   addToCart(product: Product) {
+    if (!this.auth.isLoggedIn()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
     this.api.addToCart(product);
   }
 }

@@ -164,6 +164,15 @@ class AdminController extends Controller
         ]);
     }
 
+    public function deleteOrder($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->items()->delete();
+        $order->delete();
+
+        return response()->json(['message' => 'Commande supprimée avec succès']);
+    }
+
     // 5. Reservations Management
     public function reservations()
     {
@@ -177,12 +186,92 @@ class AdminController extends Controller
         ]);
 
         $reservation = Reservation::findOrFail($id);
-        $reservation->update(['status' => $request->status]);
+        $oldStatus = $reservation->status;
+        $newStatus = $request->status;
+
+        $reservation->update(['status' => $newStatus]);
+
+        // If this is a birthday reservation, manage slot availability
+        // Rule: max 2 confirmed anniversaire reservations per slot (date + time)
+        if ($reservation->type === 'birthday') {
+            $slot = null;
+            if ($reservation->birthday_slot_id) {
+                $slot = BirthdaySlot::find($reservation->birthday_slot_id);
+            }
+            if (!$slot) {
+                $slot = BirthdaySlot::whereDate('date', $reservation->date)->where('time', $reservation->time)->first();
+            }
+
+            if ($slot) {
+                // Count how many birthday reservations are confirmed for this slot
+                $confirmedCount = Reservation::where('type', 'birthday')
+                    ->where('status', 'confirmed')
+                    ->where(function ($q) use ($slot) {
+                        $q->where('birthday_slot_id', $slot->id)
+                          ->orWhere(function ($sub) use ($slot) {
+                              $sub->whereDate('date', $slot->date)->where('time', $slot->time);
+                          });
+                    })
+                    ->count();
+
+                $maxAllowed = $slot->max_capacity ?? 2;
+
+                if ($confirmedCount >= $maxAllowed) {
+                    // Slot is full (max 2 reached) — mark as unavailable
+                    $slot->update(['is_available' => false, 'current_bookings' => $confirmedCount]);
+                } else {
+                    // Still space — keep available
+                    $slot->update(['is_available' => true, 'current_bookings' => $confirmedCount]);
+                }
+            }
+        }
 
         return response()->json([
             'message' => 'Statut de réservation mis à jour',
             'reservation' => $reservation->load(['user', 'birthdaySlot', 'birthdayMenu']),
         ]);
+    }
+
+    public function deleteReservation($id)
+    {
+        $reservation = Reservation::findOrFail($id);
+        $slotId = $reservation->birthday_slot_id;
+        $date = $reservation->date;
+        $time = $reservation->time;
+        $wasBirthday = ($reservation->type === 'birthday');
+
+        $reservation->delete();
+
+        // If this was a birthday reservation, recalculate the slot's booking and availability
+        if ($wasBirthday) {
+            $slot = null;
+            if ($slotId) {
+                $slot = BirthdaySlot::find($slotId);
+            }
+            if (!$slot && $date && $time) {
+                $slot = BirthdaySlot::whereDate('date', $date)->where('time', $time)->first();
+            }
+
+            if ($slot) {
+                $confirmedCount = Reservation::where('type', 'birthday')
+                    ->where('status', 'confirmed')
+                    ->where(function ($q) use ($slot) {
+                        $q->where('birthday_slot_id', $slot->id)
+                          ->orWhere(function ($sub) use ($slot) {
+                              $sub->whereDate('date', $slot->date)->where('time', $slot->time);
+                          });
+                    })
+                    ->count();
+
+                $maxAllowed = $slot->max_capacity ?? 2;
+                $slot->update([
+                    'current_bookings' => $confirmedCount,
+                    'is_available' => ($confirmedCount < $maxAllowed),
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Réservation supprimée avec succès']);
     }
 
     // 6. Birthday Slots CRUD
@@ -196,9 +285,18 @@ class AdminController extends Controller
         $validated = $request->validate([
             'date' => 'required|date',
             'time' => 'required|string',
-            'max_capacity' => 'required|integer|min:1',
+            'max_capacity' => 'nullable|integer|min:1',
             'is_available' => 'boolean',
         ]);
+
+        // Default: max 2 anniversaires par créneau (date + heure)
+        if (!isset($validated['max_capacity'])) {
+            $validated['max_capacity'] = 2;
+        }
+        if (!isset($validated['is_available'])) {
+            $validated['is_available'] = true;
+        }
+        $validated['current_bookings'] = 0;
 
         $slot = BirthdaySlot::create($validated);
         return response()->json($slot, 201);
@@ -274,6 +372,10 @@ class AdminController extends Controller
             'image' => 'nullable|string',
             'active' => 'boolean',
         ]);
+
+        if (!isset($validated['active'])) {
+            $validated['active'] = true;
+        }
 
         $validated['image'] = $this->processImage($request);
         $event = Event::create($validated);

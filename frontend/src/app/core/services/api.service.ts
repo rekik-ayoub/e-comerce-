@@ -190,12 +190,20 @@ export class ApiService {
     return this.http.patch<any>(`${this.apiUrl}/admin/orders/${orderId}/status`, { status });
   }
 
+  deleteAdminOrder(orderId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/orders/${orderId}`);
+  }
+
   getAdminReservations(): Observable<Reservation[]> {
     return this.http.get<Reservation[]>(`${this.apiUrl}/admin/reservations`);
   }
 
   updateReservationStatus(resId: number, status: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/admin/reservations/${resId}/status`, { status });
+  }
+
+  deleteAdminReservation(resId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/reservations/${resId}`);
   }
 
   getAdminLoyaltySettings(): Observable<any> {
@@ -236,6 +244,14 @@ export class ApiService {
 
   deleteAdminBirthdayMenu(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/admin/birthday-menus/${id}`);
+  }
+
+  createAdminBirthdaySlot(slot: any): Observable<BirthdaySlot> {
+    return this.http.post<BirthdaySlot>(`${this.apiUrl}/admin/birthday-slots`, slot);
+  }
+
+  deleteAdminBirthdaySlot(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/birthday-slots/${id}`);
   }
 
   getAdminEvents(): Observable<EventItem[]> {

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,7 +10,7 @@ import { BirthdaySlot, BirthdayMenu, Reservation } from '../../core/models';
 @Component({
   selector: 'app-reservations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <div class="container-bayou py-12">
       <!-- Header -->
@@ -21,20 +22,28 @@ import { BirthdaySlot, BirthdayMenu, Reservation } from '../../core/models';
         </p>
 
         <!-- Toggle Type -->
-        <div class="inline-flex p-1.5 rounded-2xl bg-bayou-cream-soft border border-beige-mid mt-6 gap-2 shadow-sm">
+        <div class="inline-flex flex-wrap justify-center p-1.5 rounded-2xl bg-bayou-cream-soft border border-beige-mid mt-6 gap-2 shadow-sm">
           <button
             (click)="activeTab.set('table')"
             [class.active]="activeTab() === 'table'"
             class="tab-btn"
           >
-            <i class="bi bi-cup-hot-fill text-base"></i> ☕ Réservation Normale (Table Café)
+            <i class="bi bi-cup-hot-fill text-base"></i> ☕ Table Café
           </button>
           <button
             (click)="activeTab.set('birthday')"
             [class.active]="activeTab() === 'birthday'"
             class="tab-btn"
           >
-            <i class="bi bi-cake2-fill text-gold text-base"></i> 🎂 Réservation Anniversaire Privé
+            <i class="bi bi-cake2-fill text-gold text-base"></i> 🎂 Anniversaire Privé
+          </button>
+          <button
+            *ngIf="auth.isLoggedIn()"
+            (click)="activeTab.set('my_reservations')"
+            [class.active]="activeTab() === 'my_reservations'"
+            class="tab-btn"
+          >
+            <i class="bi bi-calendar2-check-fill text-emerald-600 text-base"></i> 📋 Mes Réservations ({{ myReservations().length }})
           </button>
         </div>
       </div>
@@ -166,6 +175,82 @@ import { BirthdaySlot, BirthdayMenu, Reservation } from '../../core/models';
           </form>
         </div>
       </div>
+
+      <!-- 3. MY RESERVATIONS LIST -->
+      <div *ngIf="activeTab() === 'my_reservations'" class="max-w-3xl mx-auto space-y-6">
+        <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-800">
+          <div class="flex items-center gap-2">
+            <i class="bi bi-shield-check text-emerald-600 text-lg"></i>
+            <span><strong>Vos Réservations Enregistrées :</strong> Suivez ici l'état de validation en temps réel.</span>
+          </div>
+          <button (click)="loadMyReservations()" class="text-xs font-bold text-emerald-900 underline hover:no-underline cursor-pointer">
+            <i class="bi bi-arrow-clockwise"></i> Actualiser
+          </button>
+        </div>
+
+        <div *ngIf="myReservations().length === 0" class="glass-card text-center py-12 rounded-2xl">
+          <i class="bi bi-calendar-x text-4xl text-gold mb-3 block"></i>
+          <h4 class="font-serif font-bold text-burgundy text-lg">Vous n'avez pas encore de réservation</h4>
+          <p class="text-xs text-muted-custom mt-1 mb-4">Réservez une table café lounge ou un anniversaire privé dès maintenant.</p>
+          <div class="flex justify-center gap-3">
+            <button (click)="activeTab.set('table')" class="btn-bayou-gold text-xs py-2 px-4">Réserver une table</button>
+            <button (click)="activeTab.set('birthday')" class="btn-bayou-outline text-xs py-2 px-4">Réserver un anniversaire</button>
+          </div>
+        </div>
+
+        <div *ngFor="let res of myReservations()" class="glass-card rounded-2xl p-6 space-y-4 hover:shadow-md transition-all">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-beige-mid/40 pb-3">
+            <div class="flex items-center gap-3">
+              <span class="w-11 h-11 rounded-xl bg-bayou-cream flex items-center justify-center text-xl font-bold shadow-sm">
+                {{ res.type === 'birthday' ? '🎂' : '☕' }}
+              </span>
+              <div>
+                <div class="font-serif font-bold text-lg text-burgundy">
+                  {{ res.type === 'birthday' ? 'Anniversaire Privatisé' : 'Table Café Lounge' }}
+                </div>
+                <div class="text-xs text-muted-custom">
+                  <i class="bi bi-calendar-event"></i> {{ res.date | date:'EEEE d MMMM y' }} à <strong class="text-burgundy">{{ res.time }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div>
+              <span class="text-xs font-bold px-3.5 py-1.5 rounded-full uppercase inline-flex items-center gap-1.5 shadow-sm" [ngClass]="{
+                'bg-amber-100 text-amber-800 border border-amber-300': res.status === 'pending',
+                'bg-emerald-100 text-emerald-800 border border-emerald-300': res.status === 'confirmed',
+                'bg-rose-100 text-rose-800 border border-rose-300': res.status === 'rejected' || res.status === 'cancelled'
+              }">
+                <i class="bi" [ngClass]="{
+                  'bi-hourglass-split text-amber-600': res.status === 'pending',
+                  'bi-check2-circle text-emerald-600': res.status === 'confirmed',
+                  'bi-x-circle text-rose-600': res.status === 'rejected' || res.status === 'cancelled'
+                }"></i>
+                {{ res.status === 'pending' ? 'En attente de confirmation' : (res.status === 'confirmed' ? 'Réservation Acceptée ✅' : 'Réservation Refusée ❌') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="p-3 bg-bayou-cream-soft rounded-xl">
+              <strong class="text-burgundy block mb-1">Nombre d'invités :</strong>
+              <span class="text-muted-custom font-semibold">{{ res.guests }} personnes</span>
+            </div>
+
+            <div *ngIf="res.birthday_person_name || res.birthday_menu" class="p-3 bg-bayou-cream-soft rounded-xl">
+              <strong class="text-burgundy block mb-1">Formule & Fêté(e) :</strong>
+              <span *ngIf="res.birthday_person_name" class="text-gold font-bold block">Fêté(e) : {{ res.birthday_person_name }}</span>
+              <span *ngIf="res.birthday_menu" class="text-muted-custom">{{ res.birthday_menu.name_fr }}</span>
+            </div>
+
+            <div class="p-3 bg-bayou-cream-soft rounded-xl" [ngClass]="{'sm:col-span-2': !res.birthday_person_name && !res.birthday_menu, 'sm:col-span-1': res.birthday_person_name || res.birthday_menu}">
+              <strong class="text-burgundy block mb-1">Votre note / description :</strong>
+              <span *ngIf="res.notes" class="text-burgundy italic">"{{ res.notes }}"</span>
+              <span *ngIf="!res.notes" class="text-muted-custom italic">Aucune note particulière</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -225,11 +310,13 @@ export class ReservationsComponent implements OnInit {
   ts = inject(TranslationService);
   api = inject(ApiService);
   auth = inject(AuthService);
+  route = inject(ActivatedRoute);
 
-  activeTab = signal<'table' | 'birthday'>('table');
+  activeTab = signal<'table' | 'birthday' | 'my_reservations'>('table');
 
   birthdaySlots = signal<BirthdaySlot[]>([]);
   birthdayMenus = signal<BirthdayMenu[]>([]);
+  myReservations = signal<Reservation[]>([]);
   selectedSlot = signal<BirthdaySlot | null>(null);
 
   minDate: string = new Date().toISOString().split('T')[0];
@@ -252,6 +339,19 @@ export class ReservationsComponent implements OnInit {
     this.tableDate = this.minDate;
     this.api.getBirthdaySlots().subscribe(slots => this.birthdaySlots.set(slots));
     this.api.getBirthdayMenus().subscribe(menus => this.birthdayMenus.set(menus));
+    this.loadMyReservations();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'my_reservations') {
+        this.activeTab.set('my_reservations');
+      }
+    });
+  }
+
+  loadMyReservations() {
+    if (this.auth.isLoggedIn()) {
+      this.api.getMyReservations().subscribe(res => this.myReservations.set(res));
+    }
   }
 
   submitTableReservation() {
@@ -267,8 +367,10 @@ export class ReservationsComponent implements OnInit {
     this.api.createReservation(payload).subscribe({
       next: () => {
         this.submitting.set(false);
-        alert('Votre réservation de table a été transmise ! Vous recevrez une confirmation.');
         this.tableNotes = '';
+        this.loadMyReservations();
+        this.activeTab.set('my_reservations');
+        alert('Votre réservation de table a été transmise ! Vous recevrez une confirmation.');
       },
       error: err => {
         this.submitting.set(false);
@@ -299,10 +401,12 @@ export class ReservationsComponent implements OnInit {
     this.api.createReservation(payload).subscribe({
       next: () => {
         this.submitting.set(false);
-        alert('Votre demande d\'anniversaire a été enregistrée avec succès !');
         this.selectedSlot.set(null);
         this.birthdayPersonName = '';
         this.birthdayNotes = '';
+        this.loadMyReservations();
+        this.activeTab.set('my_reservations');
+        alert('Votre demande d\'anniversaire a été enregistrée avec succès !');
       },
       error: err => {
         this.submitting.set(false);

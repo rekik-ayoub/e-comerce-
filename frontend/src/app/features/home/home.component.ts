@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -36,7 +36,7 @@ import confetti from 'canvas-confetti';
               <a routerLink="/catalog" class="btn-bayou-gold text-sm lg:text-base py-3.5 px-8">
                 <i class="bi bi-cup-hot"></i> {{ ts.translate('hero.btn_order') }}
               </a>
-              <a routerLink="/reservations" class="btn-bayou-outline text-sm lg:text-base py-3 px-7">
+              <a [routerLink]="auth.isLoggedIn() ? '/reservations' : '/auth/login'" class="btn-bayou-outline text-sm lg:text-base py-3 px-7">
                 <i class="bi bi-calendar2-heart"></i> {{ ts.translate('hero.btn_reserve') }}
               </a>
             </div>
@@ -221,10 +221,10 @@ import confetti from 'canvas-confetti';
             </div>
 
             <div class="pt-2 flex gap-4">
-              <a routerLink="/birthday-menu" class="btn-bayou-burgundy text-sm py-3 px-6">
+              <a [routerLink]="auth.isLoggedIn() ? '/birthday-menu' : '/auth/login'" class="btn-bayou-burgundy text-sm py-3 px-6">
                 <i class="bi bi-cake2"></i> Découvrir les formules
               </a>
-              <a routerLink="/reservations" class="btn-bayou-outline text-sm py-3 px-6">
+              <a [routerLink]="auth.isLoggedIn() ? '/reservations' : '/auth/login'" class="btn-bayou-outline text-sm py-3 px-6">
                 Voir les créneaux
               </a>
             </div>
@@ -252,7 +252,7 @@ import confetti from 'canvas-confetti';
                 {{ ts.getField(ev, 'description') }}
               </p>
               <div class="pt-2">
-                <a routerLink="/events" class="text-xs font-bold text-burgundy hover:text-gold transition-colors inline-flex items-center gap-1">
+                <a [routerLink]="auth.isLoggedIn() ? '/events' : '/auth/login'" class="text-xs font-bold text-burgundy hover:text-gold transition-colors inline-flex items-center gap-1">
                   En savoir plus <i class="bi bi-arrow-right"></i>
                 </a>
               </div>
@@ -266,6 +266,7 @@ import confetti from 'canvas-confetti';
         [show]="showCelebrationModal()"
         [message]="celebrationMessage()"
         (close)="showCelebrationModal.set(false)"
+        (claimReward)="onClaimReward()"
       ></app-celebration-modal>
     </div>
   `,
@@ -280,6 +281,7 @@ export class HomeComponent implements OnInit {
   ts = inject(TranslationService);
   api = inject(ApiService);
   auth = inject(AuthService);
+  router = inject(Router);
 
   featuredProducts = signal<Product[]>([]);
   events = signal<EventItem[]>([]);
@@ -294,7 +296,7 @@ export class HomeComponent implements OnInit {
     });
 
     this.api.getEvents().subscribe(res => {
-      this.events.set(res.slice(0, 2));
+      this.events.set(res);
     });
 
     if (this.auth.isLoggedIn()) {
@@ -309,6 +311,10 @@ export class HomeComponent implements OnInit {
   }
 
   addToCart(product: Product) {
+    if (!this.auth.isLoggedIn()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
     this.api.addToCart(product, 1);
   }
 
@@ -326,5 +332,10 @@ export class HomeComponent implements OnInit {
       origin: { y: 0.6 },
       colors: ['#D9B061', '#3F0D0C', '#D9C4A9', '#FDFAF6']
     });
+  }
+
+  onClaimReward() {
+    this.showCelebrationModal.set(false);
+    this.router.navigate(['/cart'], { queryParams: { claimFreeCoffee: '1' } });
   }
 }

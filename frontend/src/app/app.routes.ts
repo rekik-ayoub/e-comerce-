@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, adminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  // Public routes — accessible without account
   {
     path: '',
     loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
@@ -11,30 +12,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/catalog/catalog.component').then(m => m.CatalogComponent)
   },
   {
-    path: 'cart',
-    loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent)
-  },
-  {
-    path: 'reservations',
-    loadComponent: () => import('./features/reservations/reservations.component').then(m => m.ReservationsComponent)
-  },
-  {
-    path: 'birthday-menu',
-    loadComponent: () => import('./features/birthday-menu/birthday-menu.component').then(m => m.BirthdayMenuComponent)
-  },
-  {
-    path: 'events',
-    loadComponent: () => import('./features/events/events.component').then(m => m.EventsComponent)
-  },
-  {
-    path: 'reviews',
-    loadComponent: () => import('./features/reviews/reviews.component').then(m => m.ReviewsComponent)
-  },
-  {
-    path: 'contact',
-    loadComponent: () => import('./features/contact/contact.component').then(m => m.ContactComponent)
-  },
-  {
     path: 'auth/login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
@@ -42,11 +19,45 @@ export const routes: Routes = [
     path: 'auth/register',
     loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
   },
+
+  // Protected routes — require login
+  {
+    path: 'cart',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent)
+  },
+  {
+    path: 'reservations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reservations/reservations.component').then(m => m.ReservationsComponent)
+  },
+  {
+    path: 'birthday-menu',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/birthday-menu/birthday-menu.component').then(m => m.BirthdayMenuComponent)
+  },
+  {
+    path: 'events',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/events/events.component').then(m => m.EventsComponent)
+  },
+  {
+    path: 'reviews',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reviews/reviews.component').then(m => m.ReviewsComponent)
+  },
+  {
+    path: 'contact',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/contact/contact.component').then(m => m.ContactComponent)
+  },
   {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
   },
+
+  // Admin route
   {
     path: 'admin',
     canActivate: [adminGuard],

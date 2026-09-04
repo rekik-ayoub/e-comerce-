@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { User } from '../models';
 
 @Injectable({
@@ -38,8 +38,9 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
+    this.clearSession();
     return this.http.post<any>(`${this.apiUrl}/logout`, {}).pipe(
-      tap(() => this.clearSession())
+      catchError(() => of(null))
     );
   }
 

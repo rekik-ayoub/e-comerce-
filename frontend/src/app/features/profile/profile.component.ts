@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
@@ -200,6 +200,7 @@ export class ProfileComponent implements OnInit {
   ts = inject(TranslationService);
   auth = inject(AuthService);
   api = inject(ApiService);
+  route = inject(ActivatedRoute);
 
   tab = signal<'reservations' | 'orders'>('reservations');
   orders = signal<Order[]>([]);
@@ -209,6 +210,17 @@ export class ProfileComponent implements OnInit {
   celebrationMessage = signal<string>('');
 
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'orders') {
+        this.tab.set('orders');
+      } else if (params['tab'] === 'reservations') {
+        this.tab.set('reservations');
+      }
+    });
+    this.loadData();
+  }
+
+  loadData() {
     this.api.getMyOrders().subscribe(res => this.orders.set(res));
     this.api.getMyReservations().subscribe(res => this.reservations.set(res));
   }

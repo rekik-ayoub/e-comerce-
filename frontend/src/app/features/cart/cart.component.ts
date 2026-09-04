@@ -1,7 +1,7 @@
-import { Component, OnInit, AfterViewInit, inject, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -73,17 +73,69 @@ import confetti from 'canvas-confetti';
         </div>
 
         <!-- Order & GPS Delivery Form (Col 5) -->
-        <div class="lg:col-span-5">
+        <div class="lg:col-span-5 space-y-4">
+
+          <!-- 🎁 FREE COFFEE LOYALTY REWARD BANNER -->
+          <div *ngIf="hasLoyaltyReward() || useFreeCoffee()" class="p-5 rounded-2xl bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 border-2 border-gold shadow-md space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl">🎉</span>
+              <div>
+                <span class="bg-bayou-burgundy text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Cadeau Fidélité Débloqué</span>
+                <h4 class="font-serif font-bold text-burgundy text-base mt-1">Félicitations ! Votre Café Gratuit est disponible</h4>
+                <p class="text-xs text-muted-custom mt-0.5">
+                  Code cadeau : <strong class="text-burgundy font-mono bg-white/80 px-1.5 py-0.5 rounded border border-gold/40">FREE-COFFEE-BAYOU</strong>
+                </p>
+              </div>
+            </div>
+
+            <div class="p-3 bg-white/90 rounded-xl border border-gold/50 flex items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2">
+                <i class="bi bi-cup-hot-fill text-gold text-lg"></i>
+                <div>
+                  <strong class="text-burgundy block">1x Café ou Cappuccino Signature Offert</strong>
+                  <span class="text-[11px] text-green-700 font-semibold">Gratuit (0.00 DT) &bull; Compteur remis à 0</span>
+                </div>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer font-bold text-burgundy text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-gold">
+                <input type="checkbox" [checked]="useFreeCoffee()" (change)="toggleFreeCoffee()" class="accent-amber-600 w-4 h-4 rounded" />
+                <span>{{ useFreeCoffee() ? 'Inclus ✅' : 'Ajouter' }}</span>
+              </label>
+            </div>
+          </div>
+
           <div class="glass-card rounded-2xl p-6 space-y-6">
             <h3 class="font-serif font-bold text-xl text-burgundy border-b border-beige-mid pb-3">
               Informations de Livraison
             </h3>
+
+            <!-- Promo Code Input -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold uppercase text-burgundy">Code Promo ou Cadeau</label>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  [(ngModel)]="voucherInput"
+                  placeholder="Ex: FREE-COFFEE-BAYOU"
+                  class="w-full p-2.5 rounded-xl border border-beige-mid text-xs uppercase font-mono bg-white focus:outline-none focus:border-gold"
+                />
+                <button (click)="applyVoucher()" type="button" class="btn-bayou-gold text-xs py-2 px-4 flex-shrink-0">
+                  Appliquer
+                </button>
+              </div>
+              <div *ngIf="voucherSuccess()" class="text-xs text-green-700 font-bold flex items-center gap-1.5">
+                <i class="bi bi-check-circle-fill"></i> {{ voucherSuccess() }}
+              </div>
+            </div>
 
             <!-- Order Total summary -->
             <div class="space-y-2 text-sm">
               <div class="flex justify-between text-muted-custom">
                 <span>Sous-total articles :</span>
                 <span>{{ api.cartTotal() | number:'1.2-2' }} DT</span>
+              </div>
+              <div *ngIf="useFreeCoffee()" class="flex justify-between text-green-700 font-semibold bg-green-50 p-2 rounded-xl border border-green-200 text-xs">
+                <span>🎁 Café Signature Cadeau :</span>
+                <span>GRATUIT (0.00 DT)</span>
               </div>
               <div class="flex justify-between text-muted-custom">
                 <span>Livraison :</span>
@@ -95,6 +147,9 @@ import confetti from 'canvas-confetti';
               </div>
               <div class="text-[11px] text-muted-custom italic">
                 * Règlement à la livraison en espèces ou par carte bancaire.
+                <span *ngIf="useFreeCoffee()" class="block text-amber-800 font-semibold mt-1">
+                  * Votre compteur de points sera remis à 0 lors de la validation.
+                </span>
               </div>
             </div>
 
@@ -148,7 +203,7 @@ import confetti from 'canvas-confetti';
                 *ngIf="auth.isLoggedIn()"
                 (click)="submitOrder()"
                 [disabled]="submitting()"
-                class="btn-bayou-gold w-full py-3 text-sm font-bold"
+                class="btn-bayou-gold w-full py-3 text-sm font-bold shadow-md"
               >
                 <i class="bi" [class.bi-bag-check-fill]="!submitting()" [class.bi-arrow-repeat]="submitting()" [class.animate-spin]="submitting()"></i>
                 <span>{{ submitting() ? 'Traitement en cours...' : ts.translate('cart.checkout') }}</span>
@@ -172,6 +227,7 @@ import confetti from 'canvas-confetti';
         [show]="showCelebrationModal()"
         [message]="celebrationMessage()"
         (close)="onModalClose()"
+        (claimReward)="onClaimRewardFromModal()"
       ></app-celebration-modal>
     </div>
   `,
@@ -186,6 +242,7 @@ export class CartComponent implements OnInit, AfterViewInit {
   api = inject(ApiService);
   auth = inject(AuthService);
   router = inject(Router);
+  route = inject(ActivatedRoute);
 
   deliveryAddress: string = '';
   deliveryLat = signal<number | null>(null);
@@ -198,17 +255,63 @@ export class CartComponent implements OnInit, AfterViewInit {
   showCelebrationModal = signal<boolean>(false);
   celebrationMessage = signal<string>('');
 
+  useFreeCoffee = signal<boolean>(false);
+  voucherInput: string = '';
+  voucherSuccess = signal<string>('');
+
+  hasLoyaltyReward = computed(() => {
+    const user = this.auth.currentUser();
+    const target = this.api.loyaltyInfo()?.target_score || 50;
+    return user ? user.points >= target : false;
+  });
+
   private map: L.Map | null = null;
   private marker: L.Marker | null = null;
 
   ngOnInit() {
-    // Default initial coordinates (Paris / Lounge City)
+    // Default initial coordinates
     this.deliveryLat.set(48.8566);
     this.deliveryLng.set(2.3522);
+
+    this.route.queryParams.subscribe(params => {
+      if (params['claimFreeCoffee'] === '1' || this.hasLoyaltyReward()) {
+        this.useFreeCoffee.set(true);
+        this.voucherSuccess.set('Code FREE-COFFEE-BAYOU activé ! 1 Café offert inclus.');
+      }
+    });
+
+    if (this.hasLoyaltyReward()) {
+      this.useFreeCoffee.set(true);
+    }
   }
 
   ngAfterViewInit() {
     setTimeout(() => this.initMap(), 200);
+  }
+
+  toggleFreeCoffee() {
+    this.useFreeCoffee.set(!this.useFreeCoffee());
+    if (this.useFreeCoffee()) {
+      this.voucherSuccess.set('Café Signature Cadeau (0.00 DT) inclus ! Compteur remis à 0 à la validation.');
+    } else {
+      this.voucherSuccess.set('');
+    }
+  }
+
+  applyVoucher() {
+    const code = (this.voucherInput || '').trim().toUpperCase();
+    if (code === 'FREE-COFFEE-BAYOU' || this.hasLoyaltyReward()) {
+      this.useFreeCoffee.set(true);
+      this.voucherSuccess.set('Code FREE-COFFEE-BAYOU validé ! 1 Café Signature offert inclus.');
+    } else {
+      alert('Code invalide. Si vous avez atteint votre score de points, utilisez le code FREE-COFFEE-BAYOU.');
+    }
+  }
+
+  onClaimRewardFromModal() {
+    this.showCelebrationModal.set(false);
+    this.useFreeCoffee.set(true);
+    this.voucherSuccess.set('Code FREE-COFFEE-BAYOU activé ! 1 Café offert inclus.');
   }
 
   initMap() {
@@ -272,6 +375,8 @@ export class CartComponent implements OnInit, AfterViewInit {
 
     this.submitting.set(true);
 
+    const isFree = this.useFreeCoffee() || !!this.voucherSuccess();
+
     const payload = {
       items: this.api.cart().map(i => ({
         product_id: i.product.id,
@@ -280,7 +385,9 @@ export class CartComponent implements OnInit, AfterViewInit {
       delivery_address: this.deliveryAddress,
       delivery_lat: this.deliveryLat(),
       delivery_lng: this.deliveryLng(),
-      notes: this.orderNotes
+      notes: this.orderNotes,
+      use_free_coffee: isFree,
+      voucher_code: isFree ? 'FREE-COFFEE-BAYOU' : null
     };
 
     this.api.createOrder(payload).subscribe({
@@ -292,7 +399,13 @@ export class CartComponent implements OnInit, AfterViewInit {
           this.auth.updatePoints(res.current_points);
         }
 
-        // Check if loyalty target reached
+        if (res.free_coffee_applied) {
+          alert('🎉 Félicitations ! Votre commande a été enregistrée avec votre Café Gratuit inclus. Votre compteur de points a été remis à 0.');
+          this.router.navigate(['/profile'], { queryParams: { tab: 'orders' } });
+          return;
+        }
+
+        // Check if loyalty target reached with this order
         if (res.reached_target) {
           const reward = this.ts.currentLang() === 'fr'
             ? (res.reward_info?.fr || 'Félicitations ! Un café offert !')
@@ -309,7 +422,7 @@ export class CartComponent implements OnInit, AfterViewInit {
           });
         } else {
           alert('Commande passée avec succès ! Règlement à la livraison.');
-          this.router.navigate(['/profile']);
+          this.router.navigate(['/profile'], { queryParams: { tab: 'orders' } });
         }
       },
       error: err => {
@@ -321,6 +434,6 @@ export class CartComponent implements OnInit, AfterViewInit {
 
   onModalClose() {
     this.showCelebrationModal.set(false);
-    this.router.navigate(['/profile']);
+    this.router.navigate(['/profile'], { queryParams: { tab: 'orders' } });
   }
 }

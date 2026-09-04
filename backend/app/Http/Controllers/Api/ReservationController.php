@@ -12,13 +12,30 @@ class ReservationController extends Controller
 {
     public function birthdaySlots(Request $request)
     {
+        // Return available slots where date >= today and confirmed bookings < 2 (or max_capacity)
         $slots = BirthdaySlot::where('is_available', true)
             ->where('date', '>=', now()->format('Y-m-d'))
             ->orderBy('date')
             ->orderBy('time')
             ->get();
 
-        return response()->json($slots);
+        // Dynamically double-check confirmed count for absolute reliability
+        $filtered = $slots->filter(function ($slot) {
+            $confirmedCount = Reservation::where('type', 'birthday')
+                ->where('status', 'confirmed')
+                ->where(function ($q) use ($slot) {
+                    $q->where('birthday_slot_id', $slot->id)
+                      ->orWhere(function ($sub) use ($slot) {
+                          $sub->whereDate('date', $slot->date)->where('time', $slot->time);
+                      });
+                })
+                ->count();
+
+            $maxCapacity = $slot->max_capacity ?? 2;
+            return $confirmedCount < $maxCapacity;
+        })->values();
+
+        return response()->json($filtered);
     }
 
     public function birthdayMenus()
@@ -61,17 +78,6 @@ class ReservationController extends Controller
             'birthday_menu_id' => $validated['birthday_menu_id'] ?? null,
             'birthday_person_name' => $validated['birthday_person_name'] ?? null,
         ]);
-
-        // If birthday slot booked, update slot current_bookings
-        if (!empty($validated['birthday_slot_id'])) {
-            $slot = BirthdaySlot::find($validated['birthday_slot_id']);
-            if ($slot) {
-                $slot->increment('current_bookings');
-                if ($slot->current_bookings >= $slot->max_capacity) {
-                    $slot->update(['is_available' => false]);
-                }
-            }
-        }
 
         return response()->json([
             'message' => 'Réservation enregistrée avec succès. En attente de confirmation.',

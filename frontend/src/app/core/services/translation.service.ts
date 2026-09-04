@@ -6,11 +6,11 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
   fr: {
     // Navigation
     'nav.home': 'Accueil',
-    'nav.menu': 'La Carte & Produits',
+    'nav.menu': 'La Carte',
     'nav.reservations': 'Réservations',
     'nav.birthday': 'Anniversaires',
     'nav.events': 'Événements',
-    'nav.reviews': 'Avis Clients',
+    'nav.reviews': 'Avis',
     'nav.contact': 'Contact',
     'nav.loyalty': 'Fidélité',
     'nav.login': 'Connexion',
