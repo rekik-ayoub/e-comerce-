@@ -24,7 +24,7 @@ import { BirthdayMenu } from '../../core/models';
           <div class="h-64 overflow-hidden relative">
             <img [src]="menu.image" [alt]="ts.getField(menu, 'name')" class="w-full h-full object-cover" />
             <div class="absolute top-4 right-4 bg-bayou-burgundy text-white font-serif font-bold text-lg px-4 py-1.5 rounded-full shadow">
-              {{ menu.price | currency:'EUR':'symbol':'1.2-2' }}
+              {{ menu.price | number:'1.2-2' }} DT
             </div>
           </div>
 

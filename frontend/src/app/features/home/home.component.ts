@@ -175,7 +175,7 @@ import confetti from 'canvas-confetti';
               </p>
 
               <div class="mt-auto pt-4 flex items-center justify-between">
-                <span class="text-lg font-bold text-burgundy font-serif">{{ product.price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                <span class="text-lg font-bold text-burgundy font-serif">{{ product.price | number:'1.2-2' }} DT</span>
                 <button (click)="addToCart(product)" class="btn-bayou-gold text-xs py-2 px-3.5">
                   <i class="bi bi-bag-plus"></i> {{ ts.translate('catalog.add_to_cart') }}
                 </button>

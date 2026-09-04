@@ -90,7 +90,7 @@ import confetti from 'canvas-confetti';
               }">
                 {{ order.status }}
               </span>
-              <span class="text-lg font-bold font-serif text-burgundy">{{ order.total | currency:'EUR':'symbol':'1.2-2' }}</span>
+              <span class="text-lg font-bold font-serif text-burgundy">{{ order.total | number:'1.2-2' }} DT</span>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ import confetti from 'canvas-confetti';
               <strong class="text-burgundy block mb-1">Articles commandés :</strong>
               <ul class="space-y-1 text-muted-custom">
                 <li *ngFor="let item of order.items">
-                  &bull; {{ item.quantity }}x {{ ts.getField(item.product, 'name') }} ({{ item.unit_price }} €)
+                  &bull; {{ item.quantity }}x {{ ts.getField(item.product, 'name') }} ({{ item.unit_price }} DT)
                 </li>
               </ul>
             </div>

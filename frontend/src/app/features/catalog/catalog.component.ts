@@ -82,7 +82,7 @@ import { Category, Product } from '../../core/models';
 
             <div class="mt-auto pt-5 flex items-center justify-between border-t border-beige-mid/40">
               <div>
-                <span class="text-xl font-bold text-burgundy font-serif">{{ product.price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                <span class="text-xl font-bold text-burgundy font-serif">{{ product.price | number:'1.2-2' }} DT</span>
                 <div class="text-[10px] text-muted-custom">+10 pts fidélité</div>
               </div>
 

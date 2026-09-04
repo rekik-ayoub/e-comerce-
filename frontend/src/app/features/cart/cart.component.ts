@@ -37,7 +37,7 @@ import confetti from 'canvas-confetti';
             <div class="flex-grow">
               <h4 class="font-serif font-bold text-base text-burgundy">{{ ts.getField(item.product, 'name') }}</h4>
               <div class="text-sm font-semibold text-gold mt-0.5">
-                {{ item.product.price | currency:'EUR':'symbol':'1.2-2' }}
+                {{ item.product.price | number:'1.2-2' }} DT
               </div>
             </div>
 
@@ -54,7 +54,7 @@ import confetti from 'canvas-confetti';
 
             <div class="text-right min-w-[70px]">
               <div class="font-bold text-burgundy font-serif">
-                {{ (item.product.price * item.quantity) | currency:'EUR':'symbol':'1.2-2' }}
+                {{ (item.product.price * item.quantity) | number:'1.2-2' }} DT
               </div>
               <button (click)="api.removeFromCart(item.product.id)" class="text-xs text-red-500 hover:underline mt-1">
                 Supprimer
@@ -83,7 +83,7 @@ import confetti from 'canvas-confetti';
             <div class="space-y-2 text-sm">
               <div class="flex justify-between text-muted-custom">
                 <span>Sous-total articles :</span>
-                <span>{{ api.cartTotal() | currency:'EUR':'symbol':'1.2-2' }}</span>
+                <span>{{ api.cartTotal() | number:'1.2-2' }} DT</span>
               </div>
               <div class="flex justify-between text-muted-custom">
                 <span>Livraison :</span>
@@ -91,7 +91,7 @@ import confetti from 'canvas-confetti';
               </div>
               <div class="flex justify-between text-base font-bold text-burgundy pt-2 border-t border-beige-mid">
                 <span>Total à régler :</span>
-                <span class="text-xl font-serif text-gold">{{ api.cartTotal() | currency:'EUR':'symbol':'1.2-2' }}</span>
+                <span class="text-xl font-serif text-gold">{{ api.cartTotal() | number:'1.2-2' }} DT</span>
               </div>
               <div class="text-[11px] text-muted-custom italic">
                 * Règlement à la livraison en espèces ou par carte bancaire.

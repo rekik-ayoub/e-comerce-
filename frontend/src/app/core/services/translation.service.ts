@@ -75,7 +75,7 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Common
     'common.free_coffee': 'Café Offert',
-    'common.currency': '€',
+    'common.currency': 'DT',
   },
   en: {
     // Navigation
@@ -149,7 +149,7 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Common
     'common.free_coffee': 'Free Coffee',
-    'common.currency': '€',
+    'common.currency': 'DT',
   }
 };
 

@@ -213,23 +213,55 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
           </button>
         </div>
 
-        <!-- New product form modal/strip -->
-        <div *ngIf="showNewProductForm()" class="glass-card p-6 rounded-2xl border border-gold/50 space-y-4">
-          <h4 class="font-bold text-burgundy text-sm">Nouveau Produit</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            <input type="text" [(ngModel)]="newProd.name_fr" placeholder="Nom (FR) *" class="p-2 border rounded-lg" />
-            <input type="text" [(ngModel)]="newProd.name_en" placeholder="Nom (EN) *" class="p-2 border rounded-lg" />
-            <input type="number" [(ngModel)]="newProd.price" placeholder="Prix (€) *" class="p-2 border rounded-lg" />
-            <select [(ngModel)]="newProd.category_id" class="p-2 border rounded-lg">
-              <option [ngValue]="1">Cafés & Espressos</option>
-              <option [ngValue]="2">Boissons Fraîches</option>
-              <option [ngValue]="3">Pâtisseries</option>
-              <option [ngValue]="4">Grains & Merch</option>
-            </select>
-            <input type="text" [(ngModel)]="newProd.image" placeholder="URL Image" class="p-2 border rounded-lg" />
-            <input type="text" [(ngModel)]="newProd.description_fr" placeholder="Description courte (FR)" class="p-2 border rounded-lg" />
+        <!-- New / Edit product form modal/strip -->
+        <div *ngIf="showNewProductForm() || editingProduct()" class="glass-card p-6 rounded-2xl border border-gold/50 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="font-bold text-burgundy text-sm">
+              {{ editingProduct() ? 'Modifier le Produit #' + editingProduct()?.id : 'Nouveau Produit' }}
+            </h4>
+            <button (click)="cancelEdit()" class="text-xs text-muted-custom hover:text-burgundy">Annuler</button>
           </div>
-          <button (click)="saveProduct()" class="btn-bayou-burgundy text-xs py-2 px-6">Enregistrer</button>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block font-bold text-burgundy mb-1">Nom (FR)</label>
+              <input type="text" [(ngModel)]="activeProdForm.name_fr" placeholder="Ex: Café Crème" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block font-bold text-burgundy mb-1">Nom (EN)</label>
+              <input type="text" [(ngModel)]="activeProdForm.name_en" placeholder="Ex: Cream Coffee" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block font-bold text-burgundy mb-1">Prix (DT)</label>
+              <input type="number" [(ngModel)]="activeProdForm.price" placeholder="Prix en DT" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block font-bold text-burgundy mb-1">Catégorie</label>
+              <select [(ngModel)]="activeProdForm.category_id" class="w-full p-2 border rounded-lg">
+                <option [ngValue]="1">Cafés & Espressos</option>
+                <option [ngValue]="2">Boissons Fraîches</option>
+                <option [ngValue]="3">Pâtisseries & Gourmandises</option>
+                <option [ngValue]="4">Grains & Merch</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-burgundy mb-1">URL Image</label>
+              <input type="text" [(ngModel)]="activeProdForm.image" placeholder="https://..." class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block font-bold text-burgundy mb-1">Description (FR)</label>
+              <input type="text" [(ngModel)]="activeProdForm.description_fr" placeholder="Notes de dégustation..." class="w-full p-2 border rounded-lg" />
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button (click)="saveProduct()" class="btn-bayou-burgundy text-xs py-2 px-6">
+              {{ editingProduct() ? 'Enregistrer les modifications' : 'Créer le produit' }}
+            </button>
+            <button *ngIf="editingProduct()" (click)="cancelEdit()" class="btn-bayou-outline text-xs py-2 px-4">
+              Annuler
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -237,12 +269,17 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
             <img [src]="p.image" class="w-16 h-16 object-cover rounded-lg" />
             <div class="flex-grow text-xs">
               <strong class="text-burgundy block font-serif text-sm">{{ p.name_fr }}</strong>
-              <span class="text-gold font-bold">{{ p.price }} €</span> &bull; 
+              <span class="text-gold font-bold">{{ p.price | number:'1.2-2' }} DT</span> &bull; 
               <span class="text-muted-custom">{{ p.category?.name_fr }}</span>
             </div>
-            <button (click)="deleteProduct(p.id)" class="text-red-600 hover:text-red-800 p-2" title="Supprimer">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="flex flex-col gap-1">
+              <button (click)="startEditProduct(p)" class="text-blue-600 hover:text-blue-800 p-1" title="Modifier le prix / l'image / le nom">
+                <i class="bi bi-pencil-square text-base"></i>
+              </button>
+              <button (click)="deleteProduct(p.id)" class="text-red-600 hover:text-red-800 p-1" title="Supprimer">
+                <i class="bi bi-trash text-base"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -399,8 +436,9 @@ export class AdminDashboardComponent implements OnInit {
   adminSlots = signal<BirthdaySlot[]>([]);
   adminReviews = signal<Review[]>([]);
 
+  editingProduct = signal<Product | null>(null);
   showNewProductForm = signal<boolean>(false);
-  newProd: any = { category_id: 1, name_fr: '', name_en: '', price: 4.5, image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop', description_fr: '' };
+  activeProdForm: any = { category_id: 1, name_fr: '', name_en: '', price: 4.5, image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop', description_fr: '' };
 
   newSlotDate: string = new Date().toISOString().split('T')[0];
   newSlotTime: string = '17:00:00';
@@ -452,6 +490,18 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  startEditProduct(prod: Product) {
+    this.editingProduct.set(prod);
+    this.activeProdForm = { ...prod };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEdit() {
+    this.editingProduct.set(null);
+    this.showNewProductForm.set(false);
+    this.activeProdForm = { category_id: 1, name_fr: '', name_en: '', price: 4.5, image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop', description_fr: '' };
+  }
+
   updateOrderStatus(id: number, status: string) {
     this.api.updateOrderStatus(id, status).subscribe(() => {
       this.loadOrders();
@@ -467,10 +517,18 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   saveProduct() {
-    this.api.createAdminProduct(this.newProd).subscribe(() => {
-      this.showNewProductForm.set(false);
-      this.loadProducts();
-    });
+    const edit = this.editingProduct();
+    if (edit) {
+      this.api.updateAdminProduct(edit.id, this.activeProdForm).subscribe(() => {
+        this.cancelEdit();
+        this.loadProducts();
+      });
+    } else {
+      this.api.createAdminProduct(this.activeProdForm).subscribe(() => {
+        this.cancelEdit();
+        this.loadProducts();
+      });
+    }
   }
 
   deleteProduct(id: number) {
