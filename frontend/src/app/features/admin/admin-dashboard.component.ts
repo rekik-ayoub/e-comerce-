@@ -673,7 +673,7 @@ import { Product, Category, Order, Reservation, BirthdaySlot, BirthdayMenu, Even
             <div>
               <h4 class="font-serif font-bold text-burgundy text-lg">
                 <span *ngIf="editingEvent()">Modifier l'événement : {{ editingEvent()?.title_fr }}</span>
-                <span *ngIf="!editingEvent()">Nouvel Événement Le Bayou</span>
+                <span *ngIf="!editingEvent()">Créer un Événement</span>
               </h4>
               <p class="text-xs text-muted-custom">Précisez la date, l'heure et l'affiche promotionnelle.</p>
             </div>
