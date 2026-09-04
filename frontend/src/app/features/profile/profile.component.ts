@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { TranslationService } from '../../core/services/translation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
-import { Order, Reservation, LoyaltyStatus } from '../../core/models';
+import { Order, Reservation } from '../../core/models';
 import { CelebrationModalComponent } from '../../shared/components/celebration-modal.component';
 import confetti from 'canvas-confetti';
 
@@ -15,7 +15,7 @@ import confetti from 'canvas-confetti';
   template: `
     <div class="container-bayou py-12">
       <!-- Top Profile Card with Loyalty Meter -->
-      <div class="glass-card rounded-3xl p-8 mb-10 border border-gold/30">
+      <div class="glass-card rounded-3xl p-8 mb-10 border border-gold/30 shadow-sm">
         <div class="flex flex-col md:flex-row items-center justify-between gap-6">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-full bg-bayou-burgundy text-white flex items-center justify-center font-serif text-2xl font-bold shadow-md">
@@ -24,7 +24,7 @@ import confetti from 'canvas-confetti';
             <div>
               <h2 class="font-serif font-bold text-2xl text-burgundy">{{ auth.currentUser()?.name }}</h2>
               <div class="text-xs text-muted-custom">{{ auth.currentUser()?.email }} &bull; {{ auth.currentUser()?.phone || 'Sans téléphone' }}</div>
-              <span class="inline-block mt-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-bayou-cream-soft text-burgundy">
+              <span class="inline-block mt-1 text-[11px] font-bold px-3 py-1 rounded-full bg-bayou-cream-soft text-burgundy border border-beige-mid/60">
                 Statut : {{ auth.currentUser()?.role === 'admin' ? 'Administrateur' : 'Membre Lounge Privilège' }}
               </span>
             </div>
@@ -48,29 +48,101 @@ import confetti from 'canvas-confetti';
         </div>
       </div>
 
-      <!-- Tabs: Orders vs Reservations -->
+      <!-- Tabs: Reservations vs Orders -->
       <div class="flex gap-4 border-b border-beige-mid pb-3 mb-8">
-        <button
-          (click)="tab.set('orders')"
-          [class.text-burgundy]="tab() === 'orders'"
-          [class.border-gold]="tab() === 'orders'"
-          class="font-serif font-bold text-lg pb-1 border-b-2 border-transparent transition-colors cursor-pointer"
-        >
-          <i class="bi bi-bag-check"></i> Mes Commandes en Cours & Historique
-        </button>
         <button
           (click)="tab.set('reservations')"
           [class.text-burgundy]="tab() === 'reservations'"
           [class.border-gold]="tab() === 'reservations'"
-          class="font-serif font-bold text-lg pb-1 border-b-2 border-transparent transition-colors cursor-pointer"
+          class="font-serif font-bold text-lg pb-1 border-b-2 border-transparent transition-colors cursor-pointer flex items-center gap-2"
         >
-          <i class="bi bi-calendar2-heart"></i> Mes Réservations
+          <i class="bi bi-calendar2-heart text-gold"></i> Mes Réservations ({{ reservations().length }})
+        </button>
+        <button
+          (click)="tab.set('orders')"
+          [class.text-burgundy]="tab() === 'orders'"
+          [class.border-gold]="tab() === 'orders'"
+          class="font-serif font-bold text-lg pb-1 border-b-2 border-transparent transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <i class="bi bi-bag-check text-burgundy"></i> Mes Commandes ({{ orders().length }})
         </button>
       </div>
 
-      <!-- Orders List -->
+      <!-- 1. RESERVATIONS LIST -->
+      <div *ngIf="tab() === 'reservations'" class="space-y-6">
+        <!-- Banner if reservations exist -->
+        <div *ngIf="reservations().length > 0" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="bi bi-check-circle-fill text-emerald-600 text-lg"></i>
+            <span><strong>Réservations enregistrées :</strong> Vous avez {{ reservations().length }} réservation(s) dans votre compte. Consultez le statut ci-dessous.</span>
+          </div>
+          <a routerLink="/reservations" class="font-bold text-emerald-900 underline hover:no-underline">Nouvelle réservation &rarr;</a>
+        </div>
+
+        <div *ngIf="reservations().length === 0" class="glass-card text-center py-12 rounded-2xl">
+          <i class="bi bi-calendar-heart text-4xl text-gold mb-3 block"></i>
+          <h4 class="font-serif font-bold text-burgundy text-lg">Aucune réservation pour l'instant</h4>
+          <p class="text-xs text-muted-custom mt-1 mb-4">Réservez une table lounge pour un café ou organisez un anniversaire inoubliable.</p>
+          <a routerLink="/reservations" class="btn-bayou-gold text-xs py-2 px-6">Réserver une table ou un anniversaire</a>
+        </div>
+
+        <div *ngFor="let res of reservations()" class="glass-card rounded-2xl p-6 space-y-4 hover:shadow-md transition-all">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-beige-mid/40 pb-3">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-bayou-cream flex items-center justify-center text-gold text-xl font-bold">
+                {{ res.type === 'birthday' ? '🎂' : '☕' }}
+              </span>
+              <div>
+                <span class="font-serif font-bold text-lg text-burgundy">
+                  {{ res.type === 'birthday' ? 'Anniversaire Privatisé' : 'Table Lounge Dégustation' }}
+                </span>
+                <div class="text-xs text-muted-custom">
+                  <i class="bi bi-calendar-event"></i> {{ res.date | date:'EEEE d MMMM y' }} à <strong class="text-burgundy">{{ res.time }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div>
+              <span class="text-xs font-bold px-3.5 py-1.5 rounded-full uppercase inline-flex items-center gap-1.5 shadow-sm" [ngClass]="{
+                'bg-amber-100 text-amber-800 border border-amber-300': res.status === 'pending',
+                'bg-emerald-100 text-emerald-800 border border-emerald-300': res.status === 'confirmed',
+                'bg-rose-100 text-rose-800 border border-rose-300': res.status === 'rejected' || res.status === 'cancelled'
+              }">
+                <i class="bi" [ngClass]="{
+                  'bi-hourglass-split text-amber-600': res.status === 'pending',
+                  'bi-check2-circle text-emerald-600': res.status === 'confirmed',
+                  'bi-x-circle text-rose-600': res.status === 'rejected' || res.status === 'cancelled'
+                }"></i>
+                {{ res.status === 'pending' ? 'En attente de confirmation' : (res.status === 'confirmed' ? 'Réservation Confirmée & Acceptée' : 'Réservation Refusée') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="p-3 bg-bayou-cream-soft rounded-xl">
+              <strong class="text-burgundy block mb-1">Nombre d'invités :</strong>
+              <span class="text-muted-custom">{{ res.guests }} personnes</span>
+            </div>
+
+            <div *ngIf="res.birthday_person_name || res.birthday_menu" class="p-3 bg-bayou-cream-soft rounded-xl">
+              <strong class="text-burgundy block mb-1">Formule & Fêté(e) :</strong>
+              <span *ngIf="res.birthday_person_name" class="text-gold font-bold block">{{ res.birthday_person_name }}</span>
+              <span *ngIf="res.birthday_menu" class="text-muted-custom">{{ res.birthday_menu.name_fr }}</span>
+            </div>
+
+            <div class="p-3 bg-bayou-cream-soft rounded-xl sm:col-span-1" [ngClass]="{'sm:col-span-2': !res.birthday_person_name && !res.birthday_menu}">
+              <strong class="text-burgundy block mb-1">Vos remarques & description :</strong>
+              <span *ngIf="res.notes" class="text-burgundy italic">"{{ res.notes }}"</span>
+              <span *ngIf="!res.notes" class="text-muted-custom italic">Aucune note particulière</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ORDERS LIST -->
       <div *ngIf="tab() === 'orders'" class="space-y-4">
-        <div *ngIf="orders().length === 0" class="text-center py-10 text-muted-custom">
+        <div *ngIf="orders().length === 0" class="glass-card text-center py-10 text-muted-custom rounded-2xl">
           Vous n'avez pas encore passé de commande.
           <div class="mt-4"><a routerLink="/catalog" class="btn-bayou-gold text-xs py-2 px-4">Commander un café</a></div>
         </div>
@@ -105,43 +177,12 @@ import confetti from 'canvas-confetti';
             </div>
             <div>
               <strong class="text-burgundy block mb-1">Livraison GPS & Notes :</strong>
-              <p class="text-muted-custom">{{ order.delivery_address || 'Sans adresse textuelle' }}</p>
+              <p class="text-muted-custom">{{ order.delivery_address || 'Sur place' }}</p>
               <p *ngIf="order.delivery_lat" class="font-mono text-[11px] text-gold mt-1">
                 GPS: {{ order.delivery_lat }}, {{ order.delivery_lng }}
               </p>
               <p *ngIf="order.notes" class="italic text-muted-custom mt-1">Note: {{ order.notes }}</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reservations List -->
-      <div *ngIf="tab() === 'reservations'" class="space-y-4">
-        <div *ngIf="reservations().length === 0" class="text-center py-10 text-muted-custom">
-          Aucune réservation enregistrée.
-        </div>
-
-        <div *ngFor="let res of reservations()" class="glass-card rounded-2xl p-6 space-y-3">
-          <div class="flex items-center justify-between border-b border-beige-mid/40 pb-3">
-            <div class="flex items-center gap-2">
-              <span class="font-serif font-bold text-base text-burgundy">
-                {{ res.type === 'birthday' ? '🎂 Anniversaire Privé' : '☕ Table Lounge' }}
-              </span>
-              <span class="text-xs text-muted-custom">&bull; {{ res.date | date:'fullDate' }} à {{ res.time }}</span>
-            </div>
-            <span class="text-xs font-bold px-3 py-1 rounded-full uppercase" [ngClass]="{
-              'bg-yellow-100 text-yellow-800': res.status === 'pending',
-              'bg-green-100 text-green-800': res.status === 'confirmed',
-              'bg-red-100 text-red-800': res.status === 'rejected' || res.status === 'cancelled'
-            }">
-              {{ res.status }}
-            </span>
-          </div>
-
-          <div class="text-xs text-muted-custom grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div><strong>Invités :</strong> {{ res.guests }} personnes</div>
-            <div *ngIf="res.birthday_person_name"><strong>À l'honneur :</strong> {{ res.birthday_person_name }}</div>
-            <div *ngIf="res.birthday_menu"><strong>Formule :</strong> {{ ts.getField(res.birthday_menu, 'name') }}</div>
           </div>
         </div>
       </div>
@@ -160,7 +201,7 @@ export class ProfileComponent implements OnInit {
   auth = inject(AuthService);
   api = inject(ApiService);
 
-  tab = signal<'orders' | 'reservations'>('orders');
+  tab = signal<'reservations' | 'orders'>('reservations');
   orders = signal<Order[]>([]);
   reservations = signal<Reservation[]>([]);
 

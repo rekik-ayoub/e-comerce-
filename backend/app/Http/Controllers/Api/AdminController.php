@@ -24,13 +24,49 @@ class AdminController extends Controller
         return response()->json([
             'total_orders' => Order::count(),
             'pending_orders' => Order::where('status', 'pending')->count(),
-            'total_revenue' => (float) Order::where('status', '!=', 'rejected')->sum('total'),
             'total_customers' => User::where('role', 'customer')->count(),
+            'total_reservations' => Reservation::count(),
             'pending_reservations' => Reservation::where('status', 'pending')->count(),
+            'confirmed_reservations' => Reservation::where('status', 'confirmed')->count(),
+            'rejected_reservations' => Reservation::where('status', 'rejected')->count(),
+            'total_products' => Product::count(),
+            'total_events' => Event::count(),
             'pending_reviews' => Review::where('approved', false)->count(),
             'unread_contacts' => Contact::where('read', false)->count(),
             'recent_orders' => Order::with(['user:id,name,email', 'items.product'])->latest()->take(5)->get(),
         ]);
+    }
+
+    private function processImage(Request $request, $currentImage = null)
+    {
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads'), $filename);
+            return '/uploads/' . $filename;
+        }
+
+        $image = $request->input('image');
+        if ($image && str_starts_with($image, 'data:image')) {
+            if (preg_match('/^data:image\/(\w+);base64,/', $image, $type)) {
+                $data = substr($image, strpos($image, ',') + 1);
+                $type = strtolower($type[1]);
+                if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
+                    $type = 'jpg';
+                }
+                $data = base64_decode($data);
+                if ($data !== false) {
+                    if (!file_exists(public_path('uploads'))) {
+                        mkdir(public_path('uploads'), 0755, true);
+                    }
+                    $filename = time() . '_' . uniqid() . '.' . $type;
+                    file_put_contents(public_path('uploads/' . $filename), $data);
+                    return '/uploads/' . $filename;
+                }
+            }
+        }
+
+        return $image ?: $currentImage;
     }
 
     // 2. Products CRUD
@@ -53,6 +89,7 @@ class AdminController extends Controller
             'featured' => 'boolean',
         ]);
 
+        $validated['image'] = $this->processImage($request);
         $product = Product::create($validated);
         return response()->json($product->load('category'), 201);
     }
@@ -60,7 +97,11 @@ class AdminController extends Controller
     public function updateProduct(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        $product->update($request->all());
+        $data = $request->all();
+        if ($request->has('image') || $request->hasFile('image_file')) {
+            $data['image'] = $this->processImage($request, $product->image);
+        }
+        $product->update($data);
         return response()->json($product->load('category'));
     }
 
@@ -229,6 +270,7 @@ class AdminController extends Controller
             'active' => 'boolean',
         ]);
 
+        $validated['image'] = $this->processImage($request);
         $event = Event::create($validated);
         return response()->json($event, 201);
     }
@@ -236,7 +278,11 @@ class AdminController extends Controller
     public function updateEvent(Request $request, $id)
     {
         $event = Event::findOrFail($id);
-        $event->update($request->all());
+        $data = $request->all();
+        if ($request->has('image') || $request->hasFile('image_file')) {
+            $data['image'] = $this->processImage($request, $event->image);
+        }
+        $event->update($data);
         return response()->json($event);
     }
 

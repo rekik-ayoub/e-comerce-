@@ -49,8 +49,8 @@ import { TranslationService } from '../../core/services/translation.service';
         <div>
           <h4 class="font-serif text-burgundy font-bold text-lg mb-4">Nous Trouver</h4>
           <ul class="space-y-2.5 text-sm text-muted-custom">
-            <li class="flex items-center gap-2"><i class="bi bi-geo-alt-fill text-gold"></i> 14 Avenue des Alizés, Lounge Bay</li>
-            <li class="flex items-center gap-2"><i class="bi bi-telephone-fill text-gold"></i> +33 1 23 45 67 89</li>
+            <li class="flex items-center gap-2"><i class="bi bi-geo-alt-fill text-gold"></i> Route Ain klm 2.5</li>
+            <li class="flex items-center gap-2"><i class="bi bi-telephone-fill text-gold"></i> +216 74 000 000 / +216 98 000 000</li>
             <li class="flex items-center gap-2"><i class="bi bi-envelope-fill text-gold"></i> contact&#64;lebayoucoffee.com</li>
           </ul>
         </div>

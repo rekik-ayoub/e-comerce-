@@ -29,7 +29,7 @@ import { ApiService } from '../../core/services/api.service';
                 <i class="bi bi-geo-alt-fill text-gold text-lg mt-0.5"></i>
                 <div>
                   <strong class="text-burgundy block">Adresse</strong>
-                  <span>14 Avenue des Alizés, Lounge Bay</span>
+                  <span>Route Ain klm 2.5</span>
                 </div>
               </div>
 
@@ -37,7 +37,7 @@ import { ApiService } from '../../core/services/api.service';
                 <i class="bi bi-telephone-fill text-gold text-lg mt-0.5"></i>
                 <div>
                   <strong class="text-burgundy block">Téléphone</strong>
-                  <span>+33 1 23 45 67 89</span>
+                  <span>+216 74 000 000 / +216 98 000 000</span>
                 </div>
               </div>
 

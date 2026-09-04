@@ -4,10 +4,12 @@ import { TranslationService } from '../../core/services/translation.service';
 import { ApiService } from '../../core/services/api.service';
 import { EventItem } from '../../core/models';
 
+import { RouterModule } from '@angular/router';
+
 @Component({
   selector: 'app-events',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="container-bayou py-12">
       <div class="text-center max-w-2xl mx-auto mb-12">

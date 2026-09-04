@@ -143,7 +143,7 @@ import { BirthdaySlot, BirthdayMenu, Reservation } from '../../core/models';
                 <select [(ngModel)]="selectedMenuId" name="menuId" class="input-bayou">
                   <option [ngValue]="null">Sans formule (à la carte)</option>
                   <option *ngFor="let menu of birthdayMenus()" [ngValue]="menu.id">
-                    {{ ts.getField(menu, 'name') }} — {{ menu.price }} €
+                    {{ ts.getField(menu, 'name') }} — {{ menu.price }} DT
                   </option>
                 </select>
               </div>

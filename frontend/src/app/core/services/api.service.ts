@@ -204,6 +204,22 @@ export class ApiService {
     return this.http.delete<any>(`${this.apiUrl}/admin/reviews/${id}`);
   }
 
+  getAdminEvents(): Observable<EventItem[]> {
+    return this.http.get<EventItem[]>(`${this.apiUrl}/admin/events`);
+  }
+
+  createAdminEvent(event: any): Observable<EventItem> {
+    return this.http.post<EventItem>(`${this.apiUrl}/admin/events`, event);
+  }
+
+  updateAdminEvent(id: number, event: any): Observable<EventItem> {
+    return this.http.put<EventItem>(`${this.apiUrl}/admin/events/${id}`, event);
+  }
+
+  deleteAdminEvent(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/events/${id}`);
+  }
+
   getAdminContacts(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/admin/contacts`);
   }
