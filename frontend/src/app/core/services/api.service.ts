@@ -23,6 +23,14 @@ export class ApiService {
   // Reactive Cart state
   cart = signal<CartItem[]>([]);
 
+  // Reactive dynamic Loyalty Info state
+  loyaltyInfo = signal<any>({
+    points_per_order: 10,
+    target_score: 50,
+    reward_description_fr: 'Un café offert !',
+    reward_description_en: 'A free coffee!'
+  });
+
   cartCount = computed(() =>
     this.cart().reduce((acc, item) => acc + item.quantity, 0)
   );
@@ -38,6 +46,16 @@ export class ApiService {
         this.cart.set(JSON.parse(savedCart));
       } catch (e) {}
     }
+    this.fetchPublicLoyaltyInfo();
+  }
+
+  fetchPublicLoyaltyInfo() {
+    this.http.get<any>(`${this.apiUrl}/loyalty-info`).subscribe({
+      next: (res) => {
+        if (res) this.loyaltyInfo.set(res);
+      },
+      error: () => {}
+    });
   }
 
   // Cart actions
@@ -202,6 +220,22 @@ export class ApiService {
 
   deleteReview(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/admin/reviews/${id}`);
+  }
+
+  getAdminBirthdayMenus(): Observable<BirthdayMenu[]> {
+    return this.http.get<BirthdayMenu[]>(`${this.apiUrl}/admin/birthday-menus`);
+  }
+
+  createAdminBirthdayMenu(menu: any): Observable<BirthdayMenu> {
+    return this.http.post<BirthdayMenu>(`${this.apiUrl}/admin/birthday-menus`, menu);
+  }
+
+  updateAdminBirthdayMenu(id: number, menu: any): Observable<BirthdayMenu> {
+    return this.http.put<BirthdayMenu>(`${this.apiUrl}/admin/birthday-menus/${id}`, menu);
+  }
+
+  deleteAdminBirthdayMenu(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/admin/birthday-menus/${id}`);
   }
 
   getAdminEvents(): Observable<EventItem[]> {

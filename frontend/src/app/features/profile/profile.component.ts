@@ -34,11 +34,11 @@ import confetti from 'canvas-confetti';
           <div class="text-center md:text-right bg-bayou-gold-light/40 border border-gold/40 p-4 rounded-2xl min-w-[200px]">
             <div class="text-xs font-bold uppercase text-brown tracking-wider">Vos Points Fidélité</div>
             <div class="text-3xl font-serif font-bold text-burgundy mt-0.5">
-              {{ auth.currentUser()?.points || 0 }} <span class="text-sm font-sans font-normal text-gold">/ 50 pts</span>
+              {{ auth.currentUser()?.points || 0 }} <span class="text-sm font-sans font-normal text-gold">/ {{ api.loyaltyInfo()?.target_score || 50 }} pts</span>
             </div>
 
             <button
-              *ngIf="(auth.currentUser()?.points || 0) >= 50"
+              *ngIf="(auth.currentUser()?.points || 0) >= (api.loyaltyInfo()?.target_score || 50)"
               (click)="celebrate()"
               class="mt-2 btn-bayou-gold text-xs py-1.5 px-4 animate-bounce"
             >

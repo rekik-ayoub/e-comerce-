@@ -80,7 +80,7 @@ class ContentController extends Controller
     public function loyaltyInfo(Request $request)
     {
         $setting = LoyaltySetting::first();
-        $user = $request->user();
+        $user = $request->user('sanctum');
 
         $target = $setting ? $setting->target_score : 50;
         $pointsPerOrder = $setting ? $setting->points_per_order : 10;
@@ -93,6 +93,8 @@ class ContentController extends Controller
             'points_per_order' => $pointsPerOrder,
             'percentage' => $percentage,
             'has_reached' => $currentPoints >= $target,
+            'reward_description_fr' => $setting->reward_description_fr ?? 'Un café offert !',
+            'reward_description_en' => $setting->reward_description_en ?? 'A free coffee!',
             'reward_fr' => $setting->reward_description_fr ?? 'Un café offert !',
             'reward_en' => $setting->reward_description_en ?? 'A free coffee!',
         ]);

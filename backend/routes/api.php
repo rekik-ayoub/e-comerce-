@@ -32,6 +32,7 @@ Route::post('/contact', [ContentController::class, 'storeContact']);
 // Birthday Menus & Public Available Slots
 Route::get('/birthday-menus', [ReservationController::class, 'birthdayMenus']);
 Route::get('/birthday-slots', [ReservationController::class, 'birthdaySlots']);
+Route::get('/loyalty-info', [ContentController::class, 'loyaltyInfo']);
 
 /*
 |--------------------------------------------------------------------------

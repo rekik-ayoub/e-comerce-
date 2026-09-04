@@ -235,6 +235,7 @@ class AdminController extends Controller
             'active' => 'boolean',
         ]);
 
+        $validated['image'] = $this->processImage($request);
         $menu = BirthdayMenu::create($validated);
         return response()->json($menu, 201);
     }
@@ -242,7 +243,11 @@ class AdminController extends Controller
     public function updateBirthdayMenu(Request $request, $id)
     {
         $menu = BirthdayMenu::findOrFail($id);
-        $menu->update($request->all());
+        $data = $request->all();
+        if ($request->has('image') || $request->hasFile('image_file')) {
+            $data['image'] = $this->processImage($request, $menu->image);
+        }
+        $menu->update($data);
         return response()->json($menu);
     }
 

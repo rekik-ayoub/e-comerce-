@@ -21,20 +21,20 @@ import { BirthdaySlot, BirthdayMenu, Reservation } from '../../core/models';
         </p>
 
         <!-- Toggle Type -->
-        <div class="inline-flex p-1 rounded-full bg-bayou-cream-soft border border-beige-mid mt-6">
+        <div class="inline-flex p-1.5 rounded-2xl bg-bayou-cream-soft border border-beige-mid mt-6 gap-2 shadow-sm">
           <button
             (click)="activeTab.set('table')"
             [class.active]="activeTab() === 'table'"
             class="tab-btn"
           >
-            <i class="bi bi-cup-hot"></i> {{ ts.translate('res.table_title') }}
+            <i class="bi bi-cup-hot-fill text-base"></i> ☕ Réservation Normale (Table Café)
           </button>
           <button
             (click)="activeTab.set('birthday')"
             [class.active]="activeTab() === 'birthday'"
             class="tab-btn"
           >
-            <i class="bi bi-cake2-fill text-gold"></i> {{ ts.translate('res.birthday_title') }}
+            <i class="bi bi-cake2-fill text-gold text-base"></i> 🎂 Réservation Anniversaire Privé
           </button>
         </div>
       </div>

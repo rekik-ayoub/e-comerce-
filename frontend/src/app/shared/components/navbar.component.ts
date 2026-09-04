@@ -11,10 +11,14 @@ import { ApiService } from '../../core/services/api.service';
   imports: [CommonModule, RouterModule],
   template: `
     <header class="bayou-header sticky top-0 z-50 shadow-sm">
-      <!-- Top banner for loyalty teaser -->
+      <!-- Top banner for loyalty teaser (Dynamic) -->
       <div class="loyalty-strip py-1.5 px-4 text-center text-xs font-semibold flex items-center justify-center gap-2">
         <i class="bi bi-gift-fill text-gold"></i>
-        <span>{{ t('loyalty.badge') }} : <strong>+10 pts / commande</strong> — Atteignez 50 pts pour un café offert !</span>
+        <span>
+          {{ t('loyalty.badge') }} : 
+          <strong>+{{ api.loyaltyInfo()?.points_per_order || 10 }} pts / commande</strong> — 
+          Atteignez <strong>{{ api.loyaltyInfo()?.target_score || 50 }} pts</strong> pour {{ ts.currentLang() === 'fr' ? (api.loyaltyInfo()?.reward_description_fr || api.loyaltyInfo()?.reward_fr || 'un café offert !') : (api.loyaltyInfo()?.reward_description_en || api.loyaltyInfo()?.reward_en || 'a free coffee!') }}
+        </span>
       </div>
 
       <nav class="container mx-auto flex items-center justify-between px-6 py-3.5">
